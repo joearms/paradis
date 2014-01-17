@@ -1,0 +1,178 @@
+\documentclass[12pt]{article}
+
+\usepackage{fancyvrb}
+\usepackage{hyperref}
+
+\title{Assigments week 4}
+\author{Joe Armstrong}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+
+\section{Introduction}
+These problems are for lectures F2 and F3 held in week 4 of 2014.
+They should be handed in at the beginning of lecture F5.
+
+Additional material can be found in Chapters 1..6 of
+the course book {\sl Programming Erlang, 2'nd edition}. 
+
+\section{How to test your code}
+
+We will use TDD\footnote{Test Driven Development.} to develop the code
+and to decide when to stop working on the code.
+Here's what you have to do:
+
+\begin{enumerate}
+\item Make sure Erlang runs on your machine.
+
+\item Download the file \verb+week4_problems.erl+ from my github repository
+  \url{http://joearms.github.com/paradis/src/week4_problems.erl}.
+
+\item Implement the module \verb+week4_solutions.erl+ (and any modules
+that \verb+week4_solutions+ calls).
+
+\item Compile \verb+week4_problems.erl+, \verb+week4_solutions.erl+ and
+any other code you need.
+
+\item Evaluate the function \verb+week4_problems:test()+. If this
+  evaluates to \verb+horray+ then you're done. Your program has passed
+  its unit tests.
+
+\end{enumerate}
+
+\section{Problems}
+
+All your code should be in the module \verb+week4_problems.erl+ it
+should export the functions \verb+factorial/1+, \verb+rotate/2+ etc.
+(The notation \verb+F/N+ means the function \verb+F+ with \verb+N+
+arguments).  The functions that you have to implement are those which
+are called from \verb+week4_problems.erl+. Each function is described
+in a separate subsection below:
+
+\subsection{factorial(N)}
+
+Compute \verb+factorial(N)+ where \verb+N+ is an integer.
+
+Factorial \verb+N+ is defined as \verb+N * N-1 * N-2 * ... * 1+
+
+For example \verb+factorial(5) = 5 * 4 * 3 * 2 * 1+ which is
+\verb+120+
+
+Note: As you can see, the test function in 
+\verb+week4_solutions.erl+\footnote{The listing is at the end of this document.} 
+starts:
+
+\begin{Verbatim}[frame=single]
+test() ->
+    120 = week4_solutions:factorial(5),
+    ...
+\end{Verbatim}
+
+This is a unit test that tests that you can correctly compute
+\verb+factorial(5)+.
+
+\subsection{rotate(N, L)}
+
+\verb+rotate(1, L)+ rotates the list \verb+N+ by one place.
+For example a one place rotation of the list \verb+[a,b,c,d,e,f]+ is the list
+\verb+[b,c,d,e,f,a]+. The element at the head of the list \verb+a+ is moved
+to the end of the list.
+
+\verb+rotate(N, L)+ for positive \verb+N+ performs a one place rotation \verb+N+ times.
+
+\verb+rotate(-1,L)+ rotates the list in the opposite direction and moves the
+last element of the list to the beginning 
+so  \verb+rotate(-1, [a,b,c,d,e,f])+ is the list
+\verb+[f,a,b,c,d,e]+.
+
+\verb+rotate(N, L)+ for negative \verb+N+ performs \verb+rotate(-1, L)+ \verb+N+ times.
+
+\subsection{count\_atoms(A, X)}
+
+Returns the number of Erlang atoms \verb+X+ in the data structure \verb+X+.
+
+In the test case we parse the program \verb+week4_problems.erl+.  The
+module \verb+epp+ exports \verb+parse_file+ which returns the parse
+tree of the program. The parse tree is dumped into the file
+\verb+debug+ so you can see what it looks like. The first time you run
+the program you should take a look in the file and see what the parse
+tree of the program looks like.
+
+Having dumped the parse tree, take a look at the parse tree and see if
+you can figure out what the internal representation of an atom
+is. Then write the function \verb+count(A, X)+ to count the number of
+occurrences of the atom \verb+A+ in the data structure \verb+X+.
+
+{\sl Hint: Use the BIF\footnote{Built in function} \verb+tuple_to_list+}
+
+\subsection{expand\_markup(Str)}
+
+\verb+expand_markup(Str)+ expands a simple markup language into HTML.
+``\verb+**+'' is a bold toggle. The first occurrence of \verb+**+ in the string
+is replaced by \verb+<b>+, the second by \verb+<\b>+ and so on.
+
+Thus \verb+expand_markup("**BB**")+ expands to \verb+<b>BB</b>+.
+
+``\verb+__+'' toggles an italic flag. So \verb+expand_markup("__II__")+ evaluates to
+\verb+<i>II</i>+.
+
+HTML fragments should be ``well nested'' so
+\verb+<b>..<i>..</i>..</b>+ is well nested, but \verb+<b>..<i>..</b>..</i>+ is
+badly nested.
+
+\verb+expand_markup+ should always return well nested HTML. 
+So for example \verb+expand_markup("**B__I**C__")+ should expand
+to \verb+<b>B<i>I</i></b><i>C</i>+.
+
+Note: Designing markup languages might look simple, but they have
+subtleties that are often missed. The last example is an example of
+this.
+
+Getting \verb+expand_markup+ right for all inputs is difficult.  Don't
+worry if this exercise takes you a few hours to solve.
+
+If you fail to solve the tricky case comment out the test in the unit
+test program and do the other exercises.
+
+\section{A successful testrun}
+
+Here's what it looks like if everything goes right:
+
+\begin{Verbatim}[frame=single]
+$ erl
+Erlang R16B (erts-5.10.1) ...
+Eshell V5.10.1  (abort with ^G) ...
+1> c(week4_problems).
+{ok,week4_problems}
+2> c(week4_solutions).
+{ok,week4_solutions}
+3> week4_problems:test().
+written:"debug"
+horray
+\end{Verbatim}
+
+\section{Hints}
+
+\begin{itemize}
+
+\item Print small data structures in the shell with \verb+io:format("~p", [X])+.
+
+\item Use \verb+week4_problems:dump/2+ to pretty print large data structures.
+
+\item Make sure all your Erlang programs are in the same directory.
+If you code is in different directories you might run into problems with code paths.
+
+\item To compile all program in a directory give the shell command:
+\verb+erlc *.erl+ (OS-X and Linux only, not windows).
+\end{itemize}
+
+
+\section{The test program}
+
+\VerbatimInput[frame=single]{week4_problems.erl}
+
+
+\end{document}
