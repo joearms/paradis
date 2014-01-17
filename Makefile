@@ -6,7 +6,8 @@ MODS := $(wildcard *.erl)
 	erlc -W $<
 
 all: week4_problems.pdf beams
-	erl -s week4_problems test -s init stop
+	./make_slides f2-f3.org
+
 
 
 week4_problems.pdf: week4_problems.tex
