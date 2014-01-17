@@ -1,0 +1,84 @@
+#+STARTUP: overview, hideblocks
+#+BEGIN_kv
+title: Sequential Erlang 
+subtitle: Lectures F2 + F3
+author: Joe Armstrong
+copyright: \copyright 2014 -- Joe Armstrong
+email: joe.armstrongericsson.com, joearms@gmail.com
+affiliation: Ericsson AB
+process: orgmode_plugin_slides
+#+END_kv
+
+* Crib sheet
+Note that the slide maker is in development, so it is a good idea to save your
+work regularly and check the output.
+
+\verb+./make_slides f2-f3.org+ makes this slide set.
+
+
+** Alt+Up/down arrow moves a heading up  down
+** Shift+Tab open closes all levels - but make sure you are at the top 
+(this works on Ubuntu, check that it works the same way on the mac)
+
+
+** Alt+Up/down arrow moves a heading up  down
+** Shift+Tab open closes all levels - but make sure you are at the top 
+(this works on Ubuntu, check that it works the same way on the mac)
+
+
+* Test Erlang Code Coloring
+#+BEGIN_erlang
+fac1(0) ->
+    1; %% comment
+fac2(N) ->
+    Var = "string",
+    case foo of 
+    end,
+    3.14159 * N * fac3(N-1).
+
+bar({a,b}) ->
+  23.
+#+END_erlang
+
+
+#+BEGIN_shell
+$erl
+1> X = 1234.
+1234
+#+END_shell
+
+* Four Up Printing
+
+This is possible.
+
+** Go into the proint menu on the mac
+** Change the preview menu to layout
+** pages per sheet = 4
+** Border = single hairline
+** Then go into the PDF menu and save as PDF
+
+
+* Box
+
+\begin{tikzpicture}
+\node [mybox] (box){%
+    \begin{minipage}{0.80\textwidth}
+        To calculate the horizontal position the kinematic differential
+        equations are needsslied:
+    \end{minipage}
+};
+\node[fancytitle, right=10pt] at (box.north west) {Unix};
+\end{tikzpicture}
+
+* Image Image
+
+\tikzstyle{process}=[circle,draw=blue!200, fill=blue!20, minimum size=20mm,thick]
+
+\begin{tikzpicture}[line width=2pt]
+\draw [help lines] (0,0) grid (10, 4);
+\node [process] (top) at (3, 4) {A};
+\node [process] (one) at (3, 0) {A};
+\node [process] (two) at (8, 0)  {B};
+\draw [->] (one.east) -- (two.west);
+\end{tikzpicture}
+

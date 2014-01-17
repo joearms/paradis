@@ -1,0 +1,207 @@
+#+STARTUP: overview, hideblocks
+#+BEGIN_kv
+title: Lecture Plan
+subtitle: Lecture plan
+author: Joe Armstrong
+copyright: \copyright 2014 -- Joe Armstrong
+email: joe.armstrongericsson.com, joearms@gmail.com
+affiliation: Ericsson AB
+process: orgmode_plugin_slides
+#+END_kv
+
+* Overview
+
+There are total of 20 lectures numbered from F1 to F20.  
+
+F1 is an introduction for the entire course.  F2 to F13 are Erlang
+lectures F14 to F17 are Java lectures, F18 is an exam preparation
+lecture, F19 and F20 are Erlang lectures.
+
+The Erlang courses are two per week given over a seven weeks
+as follows:
+
+** Week 4  - F2+F3   - Sequential Erlang1 - Chapters 1..6
+** Week 5  - F4+F5   - Sequential Erlang2 - Chapters 7..10
+** Week 6  - F6+F7   - Concurrent + Distributed Erlang + Errors - Chapters 11..14
+** Week 7  - F8+F9   - Frameworks1 - Files, Sockets - Chapters 15..19
+** Week 8  - F10+F11 - Frameworks2 - Websockets, Ets, Dets, Mnesia, OTP - Chapters 20..22
+** Week 9  - F12+F13 - Generic server, Idioms, Debugging, OTP, Torrents1 - Chapters 23..25
+** Week 12 - F19+F20 - Multicore, Recap, Torrent1 - Chapter 26
+
+The chapter numbers refer to chapters in "Programing Erlang (2'nd
+edition).
+
+Assignments are handed out on a weekly basis. There are assignments
+cover both the lectures in the week concerned. They must be completed
+within one week.
+
+By the end of week 9 (lecture F13) the student should have a good
+understanding of Erlang.
+
+To focus our ideas in Lecture F13 we'll see how to make an Erlang
+version of the "Bit torrent" program. In F19 we'll complete the
+program. The idea this pf this is to ``see how the bits fit together''.
+
+Ill spend half of F13 and half of F19 making a bit torrent like program
+and showing how this draws upon what we have learned in previous lectures.
+
+
+* W4/F1 - Overview
+** General Overview
+** Course Sign-up
+  
+* W4/F2 - Sequential Erlang 1(a) - Chapters 1,2,3,4
+** Concurrency
+** The Shell
+** Data types
+** Modules and functions
+** Unit tests
+** Funs
+** List Comprehensions
+
+* W4/F3 - Sequential Erlang 1(a)  - Chapters 5,6
+** Records and Maps 
+** Error handling philosophy
+** Try - Catch
+** Fail Noisily, Fail Politely
+** Stack Traces
+
+
+* W5/F4 - Sequential Erlang 2(a) - Chapters 7,8 
+
+** Binaries
+** Bit Syntax
+** Bit Syntax examples
+** Guards
+** Rest of Sequential Erlang
+
+* W5/F5 - Sequential Erlang 2(b) - Chapters 9,10
+** Types
+** Dynamic and static types
+** Type Inference vs. Type checking
+** Type notation
+** Dialyzer
+** Compiling
+** Makefiles
+** Environment tweaking
+
+
+* W6/F6 - Concurrent Erlang - Chapters 11,12 
+** Concurrency Intro.
+** Concurrency Primitives
+** Client Server
+** Processes are cheap
+** Send/Receive
+** Spawn
+** Registered Processes 
+
+
+* W6/F7 - Error and Distributed Programming - Chapters 13,14 
+** Links
+** Monitors
+** The error model
+** Firewall
+** Generic Allocator
+** Why Distributed Programming?
+** Erlang distribution
+** Explicit sockets and protocols
+** Distribution BIFS 
+** Security
+
+
+
+* W7/F8 - Frameworks1 - Files, Sockets - Chapters 15,16,17 
+
+** Interfacing 
+** Files
+** Random access
+** Directory and file operations
+** Sockets
+** TCP
+** UDP
+** Shoutcast
+** Streaming music
+** Parallel and Sequential servers
+
+* W7/F9 - Frameworks2 - Websockets, Ets, Dets - Chapters 17,18,19 
+
+** UDP
+** TCP
+** Websockets
+** Talking to the browser
+** Chat widget
+** Browser graphics
+** ETS
+** DETS
+
+
+* W8/F10 - Mnesia Database,Debugging etc. Chapters 20,21
+** Mnesia the Erlang data base
+** Queries
+** Transactions
+** Table viewer
+** Debugging
+** Profiling
+** Coverage
+
+* W8/F11 - OTP - Chapter 22
+** Road to the gen server
+** The Gen server in 5 steps
+** Abstracting out concurrency
+
+* W9/F12 - gen\_server, etc. Idioms Chapters 23,24
+** gen\_server
+** gen\_supervisor
+** Idioms
+** Erlang view of the world
+** Physical modeling - Agents
+  
+* W9/F13 - Third party code + Bit Torrent 1 theory Chapter 25
+** Rebar
+** Github
+** Not in the book
+** Describe the bit torrent protocol
+** Generating the Digest
+** Authentication
+** Security
+** Scalability
+** Fault tolerance
+** Program 1 - The torrent maker
+** Program 2 - The Index
+** Program 3 - The tracker
+** Program 4 - The Peers
+** Program 5 - Statistics
+** Security aspects
+
+
+* W10/F14 - Java 1
+* W10/F15 - Java 2
+
+
+* W11/F16 - Java 3
+* W11/F18 - Java 1
+
+
+* W12/F19 - Multicore - Bit Torrent 2 - Chapter 26 
+
+** pmap
+** promises
+** streams
+** Connecting things together
+** Protocols
+** UBF
+** Bit torrent 2
+
+* W12/F20 - Erlang recap
+** Recapitulate everything that has been said
+  
+  
+
+  
+
+
+
+
+
+
+

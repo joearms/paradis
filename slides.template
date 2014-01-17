@@ -1,0 +1,155 @@
+\documentclass[12pt]{article}
+
+%% Template variables
+%% $author
+%% $title
+%% $subtitle
+%% $slides
+%% $email
+%% $affiliation
+
+\usepackage{sslides}
+\usepackage{listings}
+
+\definecolor{shellcolor}{rgb}{.9, .9, .9}
+\definecolor{erlcolor}{HTML}{F2F7FE}
+
+\definecolor{punccolor}{named}{black}
+\definecolor{commentcolor}{named}{blue}
+\definecolor{integercolor}{named}{black}
+\definecolor{floatcolor}{named}{black}
+\definecolor{charcolor}{named}{black}
+
+\definecolor{stringcolor}{HTML}{000080}
+\definecolor{atomcolor}{named}{black}
+
+\definecolor{varcolor}{named}{red}
+
+
+\lstnewenvironment{erl}{%
+  \lstset{backgroundcolor=\color{erlcolor},
+  frame=single,
+  framerule=1pt,
+  escapeinside={(*@}{@*)},
+  basicstyle=\ttfamily,
+  columns=fullflexible}}{}
+
+\lstnewenvironment{shell}{%
+  \lstset{backgroundcolor=\color{shellcolor},
+  frame=single,
+  framerule=1pt,
+  escapeinside={(*@}{@*)},
+  basicstyle=\ttfamily,
+  columns=fullflexible}}{}
+
+
+%% for using MikTex latex and then creating a ps or pdf from the dvi file
+%% you might need to uncomment the following line
+%% \special{landscape} 
+
+%% load sslides.sty
+
+\usepackage{tikz}
+\usetikzlibrary{arrows,shapes,snakes}
+\usepackage{amsmath,amssymb}
+\usepackage{verbatim}
+
+%% to support German characters like הצü 
+%\usepackage[]{fontenc}
+%\usepackage[latin1]{inputenc} 
+\usepackage{fancyvrb}
+\usepackage{calc}
+\usepackage{fancybox}
+
+%% graphics
+\usepackage{graphicx}
+
+%%----------------------------------------------------------------
+%% Change author info here
+\def\nameTitle{Joe Armstrong}
+\def\emailTitle{${email}}
+\def\affiliationTitle{${affiliation}}
+
+%% Change presentation info
+\def\presentationTitle{${title}}
+\def\presentationSubTitle{${subtitle}}
+\def\eventTitle{}
+\def\placeAndDayTitle{ }
+
+%% used for footer in fancy headings
+\def\nameFooter{\nameTitle}
+\def\placeAndDayFooter{\placeAndDayTitle}
+
+\usepackage{fancyheadings}
+\pagestyle{fancy}
+
+% header
+\lhead{} 
+\chead{}
+
+%%% logo
+\rhead{}
+
+%%% footer
+\footrulewidth 0pt 
+\headrulewidth 0pt
+\rfoot{\footnotesize ${copyright}}
+\lfoot{\footnotesize ${subtitle}}
+\cfoot{\footnotesize \thepage}
+
+
+%% most beamers can't project decent colors so I set them to max!
+%% redefine emph color
+%\definecolor{Emph}{rgb}{1,0,0}  %red
+\definecolor{Emph}{rgb}{0.7,0.1,0.1}  %softer red for display
+\renewcommand{\emph}[1]{\textcolor{Emph}{\bf\textit{#1}}}
+
+%% define color for slide titles
+%\definecolor{Title}{rgb}{0,0,1}  %blue
+\definecolor{Title}{rgb}{0.2,0.2,0.6}  %softer blue for display
+% \definecolor{Title}{rgb}{1,0,0}  %red
+
+
+
+\tikzstyle{mybox} = [draw=red, fill=blue!20, very thick,
+    rectangle, rounded corners, inner sep=10pt, inner ysep=20pt]
+\tikzstyle{fancytitle} =[fill=red, text=white]
+
+
+
+%%----------------------------------------------------------------
+\begin{document}
+
+%% Title slide: choose a title slide layout
+%% you can also adapt the title slide in includes/titlepage_...
+%\include{includes/titlepage_left}
+%\include{includes/titlepage_center}
+%% edit the logos in includes/titlepage_logo.tex
+%\include{includes/titlepage_logo} 
+
+%% add entry for Titleslide
+
+\addcontentsline{toc}{subsection}{\protect\numberline{\thesection}Title slide}%
+
+%% Title slide
+
+\vspace*{4cm}
+
+
+\raggedright \textcolor{Title}{\LARGE\bf ${title}}\\
+ 
+\textcolor{Title}{${subtitle}}
+
+\vspace{1cm}
+
+\raggedright {\bf \nameTitle} \\[2mm]
+{\small\affiliationTitle}
+\vspace{1cm}
+
+
+\thispagestyle{empty}
+
+${slides}
+
+\end{document}
+
