@@ -1,7 +1,7 @@
-\documentclass[12pt]{article}
+\documentclass[12pt]{hitec}
 
 \usepackage{fancyvrb}
-\usepackage{hyperref}
+%%\usepackage{hyperref}
 
 \title{Assigments week 4}
 \author{Joe Armstrong}
@@ -13,8 +13,10 @@
 \tableofcontents
 
 \section{Introduction}
-These problems are for lectures F2 and F3 held in week 4 of 2014.
-They should be handed in at the beginning of lecture F5.
+
+These problems are for lectures F2 and F3 held in week 4 of 2014.  The
+completed assignments should be submitting to our ilearn2-server.
+{\sl before} lecture F5.
 
 Additional material can be found in Chapters 1..6 of
 the course book {\sl Programming Erlang, 2'nd edition}. 
@@ -29,7 +31,7 @@ Here's what you have to do:
 \item Make sure Erlang runs on your machine.
 
 \item Download the file \verb+week4_problems.erl+ from my github repository
-  \url{http://joearms.github.com/paradis/src/week4_problems.erl}.
+  \verb+http://joearms.github.com/paradis/src/week4_problems.erl+.
 
 \item Implement the module \verb+week4_solutions.erl+ (and any modules
 that \verb+week4_solutions+ calls).
@@ -37,15 +39,18 @@ that \verb+week4_solutions+ calls).
 \item Compile \verb+week4_problems.erl+, \verb+week4_solutions.erl+ and
 any other code you need.
 
-\item Evaluate the function \verb+week4_problems:test()+. If this
-  evaluates to \verb+horray+ then you're done. Your program has passed
-  its unit tests.
+\item Evaluate the function \verb+week4_problems:test_easy()+. If this
+  evaluates to \verb+horray+ your program has passed
+  its unit test and will be graded as {\sl Godk\"{a}nd}.
+
+\item To get {\sl V\"{a}l Godk\"{a}nd} you should also pass the tests
+  in the function \verb+week4_problems:test_hard()+.
 
 \end{enumerate}
 
 \section{Problems}
 
-All your code should be in the module \verb+week4_problems.erl+ it
+All your code should be in the module \verb+week4_solutions.erl+ it
 should export the functions \verb+factorial/1+, \verb+rotate/2+ etc.
 (The notation \verb+F/N+ means the function \verb+F+ with \verb+N+
 arguments).  The functions that you have to implement are those which
@@ -124,8 +129,9 @@ HTML fragments should be ``well nested'' so
 badly nested.
 
 \verb+expand_markup+ should always return well nested HTML. 
-So for example \verb+expand_markup("**B__I**C__")+ should expand
-to \verb+<b>B<i>I</i></b><i>C</i>+.
+So, for example, \verb+expand_markup("**B__I**C__")+ should expand
+to\\
+\verb+<b>B<i>I</i></b><i>C</i>+.
 
 Note: Designing markup languages might look simple, but they have
 subtleties that are often missed. The last example is an example of
@@ -149,9 +155,11 @@ Eshell V5.10.1  (abort with ^G) ...
 {ok,week4_problems}
 2> c(week4_solutions).
 {ok,week4_solutions}
-3> week4_problems:test().
-written:"debug"
+3> week4_problems:test_east().
 horray
+4> week4_problems:test_east().
+written:"debug"
+whoopy
 \end{Verbatim}
 
 \section{Hints}

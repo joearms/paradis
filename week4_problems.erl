@@ -1,7 +1,7 @@
 -module(week4_problems).
--export([test/0, dump/2]).
+-export([test_easy/0, test_hard/0, dump/2]).
 
-test() ->
+test_easy() ->
     M = week4_solutions,
     120 = M:factorial(5),
     L = [a,b,c,d,e,f],
@@ -14,14 +14,16 @@ test() ->
     "<b>BB</b>"   = M:expand_markup("**BB**"),
     "<b>BB</b><i>II</i>"   = M:expand_markup("**BB**__II__"),
     "<b>BB<i>II</i>CC</b>" = M:expand_markup("**BB__II__CC**"),
-    %% the next test is tricky -- comment out if you
-    %% get totally stuck
-    "<b>BB<i>II</i></b><i>CC</i>" = 
-	M:expand_markup("**BB__II**CC__"),
-    test1(),
     horray.
 
-test1() ->
+test_hard() ->
+    "<b>BB<i>II</i></b><i>CC</i>" = 
+	week4_solutions:expand_markup("**BB__II**CC__"),
+    test_count_atoms(),
+    whoopy.
+
+
+test_count_atoms() ->
     X = epp:parse_file("week4_problems.erl",[],[]),
     dump("debug", X),
     8 = week4_solutions:count_atoms(a, X).

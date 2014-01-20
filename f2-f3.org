@@ -54,7 +54,7 @@ there are theorems about this} -  we won't solve these :-)
    
 * Help me improve the course
 ** We start with a emacs org-mode, this file is \verb+f2-f3.org+.
-** Erlang parses this and transforms it into \verb+f2-f3.org.tex+) it adds color coding of code and a few other nice things.
+** An Erlang program \verb+orgmode_parse.erl+ transforms it into \verb+f2-f3.org.tex+. This adds color coding of code and a few other nice things.
 ** Run \verb+pdflatex+ twice and get \verb+f2-f3.org.pdf+.
 ** This system was written last week and is possibly buggy.
 ** Please help me improve the material. Push all changes to github.
@@ -234,7 +234,7 @@ x
 27391836713581739719319837917391739173218361836
 16\#ca23ad12 -- hex
 2\#1010101   -- base 2
-N\#DDDDD     -- base D
+N\#DDDDD     -- base N
 \$a (asci code for a = 97)
 #+END_sublist
 
@@ -613,7 +613,7 @@ sum_and_double3([], L, N) ->
 ** Write the code using accumulators.
 ** Don't bother if the lists come out in the wrong order.
 ** Reverse the order at the end.
-** \verb+lists:reverse+ is a BIF not a function call \textcolor{red}{but it looks like a BIF}.
+** \verb+lists:reverse+ is a BIF not a function call \textcolor{red}{but it looks like a function call}.
 * Tail Recursion
 ** The last thing you do is call another routine
 ** really ``last call optimization''
@@ -634,7 +634,6 @@ the call to y (a lastcall) is compiled as
 
 * BIFS
 ** Do things that are impossible in erlang ( \verb+atom_to_list(abc)+).
-
 ** Do things that are slow in erlang ( \verb+lists:reverse/1+).
 ** Look like erlang function calls
 
@@ -749,8 +748,9 @@ birthday(X) ->
 3> X = (catch atom_to_list(1)).
 {'EXIT',{badarg,
     [{erlang,atom_to_list,[1],[]},
-     {erl_eval,do_apply,6,[{file,"erl_eval.erl"},{line,573}]},
-                 ...
+     {erl_eval,do_apply,6,
+       [{file,"erl_eval.erl"},{line,573}]},
+          ...
 #+END_shell
 
 * Try ... catch, catch .. throw
@@ -765,7 +765,7 @@ after
 end
 #+END_erlang
   
-* ++  and --
+* ++  and --\,--
 
 ** X \verb|++| Y is an infix notation for \verb+lists:append(X,Y)+
 ** Takes time \verb+O(length(X)).+
