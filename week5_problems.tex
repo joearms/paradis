@@ -1,0 +1,256 @@
+\documentclass[12pt]{hitec}
+
+\usepackage{fancyvrb}
+\usepackage{hyperref}
+
+\title{Assigments week 5}
+\author{Joe Armstrong}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+
+\section{Introduction}
+These problems are for lectures F4 and F5, held in week 5 of 2014.
+
+Additional material can be found in Chapters 7..10 of the course book
+{\sl Programming Erlang, 2'nd edition}.
+
+\section{Problems}
+
+The problems this week deal with binaries, the bit syntax, and types.
+
+To get {\sl V\"{a}l Godk\"{a}nd} you solve all the problems marked
+\verb+advanced+.
+
+You should also write unit tests for all for functions and add type
+declarations to all the exported functions. You should run the dialyzer
+on your code, do not use \verb+-compile(export_all)+ when you run the dialyzer.
+
+\section{LTV encoding}
+
+Binaries and the bit syntax were introduced into Erlang specifically to
+simplifying parsing data in communications protocols. 
+One common scheme for representing data in
+is the so called ``Tag-Length-Value'' encoding scheme.
+
+Suppose we want to transmit strings, integers, and floating point numbers
+between two programs on different machines. We can encode these as follows:
+
+\begin{verbatim}
++-----------------------------------------+
+| 1 | Len (4 bytes) | String of Len Bytes |
++-----------------------------------------+
+
++-------------------------------------------------+
+| 2 | Len (4 bytes) | Integer encoded in Len bytes|
++-------------------------------------------------+
+
++------------------------------------------------+
+| 3 | Len (4 bytes) | Float encoded in Len Bytes |
++------------------------------------------------+
+\end{verbatim}
+
+The first byte is the tag, 1 means ``string'', 2 means ``integer'' and
+so on.  This is followed by a 4 byte length count encoded as a signed
+big-endian integer. The remainder of the packet contains the encoding
+of the string, integer or float.
+
+Given this encoding write the following routines:
+
+\subsection{\texttt{encode\_seq(L) -> Bin}}
+
+\verb+encode_seq(L)+ takes an argument \verb+L+ which is a list of integers,
+floats and strings and returns a binary \verb+Bin+ containing the
+data in \verb+L+ as a sequence of  TLV encoded forms.
+
+\subsection{\texttt{decode\_seq(Bin) -> L}}
+
+Is the inverse of \verb+encode_seq+.
+
+
+\subsection{advanced: \texttt{safe\_encode\_seq(L) -> Bin}}
+
+Having written \verb+encode_seq+, you will realize there is a
+problem. In Erlang integers are represented as bignums. If the
+receiving program is C, then integers will have to be encoded as as
+signed or unsigned, and we might want to distinguish between 32 and 64
+bit integers. Also C does not understand bignums.
+
+Add new tags to the encoding scheme to represent signed, unsigned, 32- and 64- bit
+integers. Write \verb+safe_encode_seq+ to perform the encoding. This is the same
+as \verb+encode_seq+ but it should use the extended tag scheme and it should
+fail if called with invalid data (for example, if it is called with an integer
+that will not fit into 64 bits).
+
+ \subsection{advanced: \texttt{safe\_decode\_seq(L) -> Bin}}
+
+This is the inverse of \verb+safe_encode_seq+.
+
+\section{Packet manipulation}
+
+We define a packet as a binary where the first four bytes represent a
+4 byte length header \verb+N+ (encoded as a 32 bit big-endian integer)
+followed by N bytes of data. Like this:
+
+\begin{verbatim}
++--------------------------------+-------------------+
+| N (4 bytes big-endian integer) | N bytes of Data   |
++--------------------------------+-------------------+
+\end{verbatim}
+
+
+The N bytes of data, can be binary data or an Erlang term \verb+T+
+encoded with \verb+term_to_binary(T)+.
+
+
+Write the following functions:
+
+\subsection{\texttt{binary\_to\_packet(B)}}
+
+Write a function \verb+binary_to_packet(B) -> P+ that converts a
+binary \verb+B+ to a packet \verb+P+.
+
+\subsection{\texttt{packet\_to\_binary(Packet)}}
+Write the inverse function \verb+packet_to_binary(Packet)-> B+.
+
+
+\subsection{\texttt{term\_to\_packet(Term)}}
+Write the functions \verb+term_to_packet(Term) -> Packet+.
+
+\subsection{\texttt{packet\_to\_term(Packet)}}
+
+Write the inverse
+function \verb+packet_to_term(P) -> Term+ where \verb+P+ is a packet.
+
+\section{Detecting corrupt data}
+
+When you have built a packet it might be a good idea to add a checksum
+to the data, so that you can test it later to see if the packet has
+been corrupted. The packet now looks like this:
+
+\begin{verbatim}
++--------------+-------------------+
+| N | Checksum | N bytes of Data   |
++--------------+-------------------+
+\end{verbatim}
+
+To compute a checksum you can call one of the functions
+\verb+erlang:crc32+ or \verb+erlang:md5+.
+
+
+\subsection{advanced: \texttt{term\_to\_packet\_with\_checksum(Term)}}
+Write a safe version of \verb+term_to_packet+ which includes a checksum.
+
+\subsection{advanced: \texttt{packet\_to\_term\_with\_checksum(Packet)}}
+Write the inverse to \verb+term_to_packet_with_checksum(Term)+
+
+{\sl Even more advance: is your code really safe -- is a checkum
+  enough -- could a bad guy corrupt the data and cause a buffer
+  overflow attack?}
+
+\section{Markdown}
+
+Markdown is a language for converting a simple text markup language
+to HTML. The first exercise is to make a simple markdown processor.
+
+Markdown is described at
+\url{http://daringfireball.net/projects/markdown/}
+
+Assume that the input to a markdown processor uses the following
+conventions to delimit the different blocks in input:
+
+\begin{enumerate}
+\item Lines starting \verb+#+ denote HTML header (\verb+<h1>+) blocks.
+\item Lines starting \verb+##+ denote HTML header (\verb+<h2>+) blocks.
+\item Lines starting with any other characters are paragraphs.
+\item Paragraphs are terminated by completely blank lines, or header blocks.
+\end{enumerate}
+
+\subsection{advanced: \texttt{markdown:expand\_binary(F)}}
+
+Start by writing a function \verb+markdown:parse_binary(Bin)+ which
+parses a binary and returns a list of markdown blocks in the
+binary. For example:
+
+\begin{Verbatim}[frame=single]
+> markdown:parse_binary(<<"# hello
+This is a paragraph
+with two lines
+#Another heading
+and more data">>).
+[{h1,<<"hello">>},
+ {para,<<"This is a paragraph\nwith two lines\n"},
+ {h1,<<"Another heading">>}]
+\end{Verbatim}
+
+\subsection{advanced: \texttt{markdown:parse\_to\_html(L)}}
+
+Once we have a parse tree. We want to turn it into HTML, write a
+function to expand the parser tree that you obtained in the previous
+section, and convert it to HTML. For example:
+
+\begin{Verbatim}[frame=single]
+> markdown:parse_to_html([
+  {h1,<<"hello">>},
+  {para,<<"This is a paragraph\nwith two lines\n"},
+  {h1,<<"Another heading">>}]).
+  <<"<h1>Hello</h1><p>This is a ...">>.
+\end{Verbatim}
+
+\subsection{advanced: \texttt{markdown:expand\_file(F)}}
+
+The function \verb+markdown:expand_file(F)+ should read the file
+\verb+F+ using\\
+\verb+file:read_file(F)+ the result is be a tuple
+\verb+{ok, B}+ where \verb+B+ is a binary containing the content of
+the file \verb+F+. Parse the resultant binary using
+\verb+markdown:parse_binary(B)+ and turn the parse tree into HTML using
+\verb+markdown:parse_to_html+. Write the result in a file
+\verb+File.html+. Test this in a browser for various inputs.
+
+\section{Notes}
+
+In writing \verb+markdown:parse_binary+ you'll probably notice that the
+markdown documentation is rather vague about whether things like leading
+and trailing newlines belong to the paragraphs and headings or not.
+
+Assume the input to the parser is:
+
+\begin{Verbatim}
+# Header1
+The start of paragraph one ...
+\end{Verbatim}
+
+Does the newline separating the header and the first line of the
+paragraph belong to the header or to the first line of the paragraph or
+to neither?
+
+Depending upon the answer to this question there are three possible
+Erlang  parse trees, for example:
+
+\begin{itemize}
+\item \verb+[{h1,<<"Header1">>},{para,<<"The start ...">>},...]+
+\item \verb+[{h1,<<"Header1\n">>},{para,<<"The start ...">>},...]+
+\item \verb+[{h1,<<"Header1">>},{para,<<"\nThe start ...">>},...]+
+\end{itemize}
+
+What about the white space following the \verb+#+ character,
+should this be represented in the parse tree or not?
+
+Once we have a parse tree of the form \verb+[{h1,...}, {para, ...}]+
+is is easy to render this as HTML or \LaTeX{}, note that any white
+space issues (the kind I mentioned earlier) do not seem to affect the
+rendered HTML.
+
+How white space is handled is crucial to accurately rendering markdown,
+if we extend the program to handle preformmated text, we'll get
+problems if this is problem is not correctly analyzed.
+
+{\sl For fun, you might like to connect this code with last weeks
+  exercises in rendering inlines, to make a more sophisticated markdown
+  processor.}
+
+\end{document}
