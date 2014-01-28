@@ -270,7 +270,7 @@ specification.
 * 5 birthday declarations
 
 #+BEGIN_erlang
-birthday1(N) -> N.
+birthday1(N) -> N + 1.
 
 -spec birthday2(integer()) -> integer().
 birthday2(N) ->  N+1.
