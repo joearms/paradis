@@ -34,13 +34,13 @@ title:
 * Concurrent vs Parallelism
 ** Concurrent = {\sl the illusion of parallelism}.
 ** Parallel = {\sl really parallel}.
-** On a quad code there can only really be 4 things happening at the same time.
+** On a quad core there can only really be 4 things happening at the same time.
 
 Note that in reality there is more parallelism than is implied by the number of
 cores:
 
 ** Instruction level parallelism (several assembly instructions can execute at the same time).
-** Memory fetch/store parallelism (several memory locations cn be transfered to registers at the same time).
+** Memory fetch/store parallelism (several memory locations can be transfered to registers at the same time).
 ** Pipeline parallelism (several things can happen in the pipeline at the same time).
 ** I/O parallelism (SSD's can have several controllers).
 
@@ -87,7 +87,7 @@ All the above are very difficult to program.
 start1() ->
     spawn(f6, loop1, []).
 
-loop() ->
+loop1() ->
    receive
       {square, X} ->
          print(X*X),
@@ -106,7 +106,7 @@ Pid ! {square, 10}
 ** Getting the result back?
 #+BEGIN_erlang
 start2() ->
-   spawn(f6, loop2, [] end)
+   spawn(f6, loop2, [])
 
 loop2() ->
    receive
@@ -136,7 +136,7 @@ loop3() ->
    receive
       {From, {square, X}} ->
          From ! {self(), X*X},
-         loop()
+         loop3()
    end.
 
 area_square(Pid, X) ->
@@ -188,7 +188,7 @@ rpc(Pid, Query) ->
 * Client - Server 5 (Tagged replies)
 
 #+BEGIN_erlang
-Pid = spawn(fun() -> area() end)
+Pid = spawn(fun() -> loop() end)
 
 loop() ->
    receive
@@ -256,7 +256,7 @@ rpc(Pid, Query) ->
 ** What is DO SOMETHING?
 ** What is TIME?
 ** Idempotence.
-** Getting DO SOMETHING and TIME right is incredably difficult.
+** Getting DO SOMETHING and TIME right is incredibly difficult.
 
 * Why is this difficult?
 
@@ -303,7 +303,7 @@ title:The scheduler
 #+BEGIN_erlang
 Pid = spawn(fun() -> loop(State) end)
 
-loop() ->
+loop(State) ->
    receive
       {From, Pattern1} ->
          State1 = ...
@@ -650,7 +650,7 @@ watch(Pid) ->
     ...
 #+END_erlang
 
-** If you are very quick loop1 might will crash {\sl before} the watcher executes the \verb+link+ statement.
+** If you are very quick, loop1 might crash {\sl before} the watcher executes the \verb+link+ statement.
 ** That's why we have \verb+spawn_link+.
 
 * Monitors
@@ -772,7 +772,7 @@ yawn
 ** Designed for clusters in the same LAN not wide scale distribution.
 ** Cookie security.
 ** Great for tightly connected clusters in the samer administrative domain.
-** Code distribution problem not solved (assumes same backend to fetch the code from) - origonally all nodes read from a NFS file system.
+** Code distribution problem not solved (assumes same backend to fetch the code from) - originally all nodes read from a NFS file system.
    
 * Next Week
 

@@ -20,15 +20,14 @@ Additional material can be found in Chapters 11 to 14 of the course book
 
 \section{Problems}
 
-This week I've put the problems into four categories:
+This week I've put the problems into three categories:
 
 \begin{itemize}
 \item {\bf normal} solve these to get {\sl Godk\"{a}nd}.
-\item {\bf advance} solve these to get {\sl V\"{a}l Godk\"{a}nd}.
+\item {\bf advanced} solve these to get {\sl V\"{a}l Godk\"{a}nd}.
 \item {\bf optional} solve these to get a deeper understanding of the problem. You don't
 have to hand in your solutions to these, but solving them, or attempting them will
 deepen your understanding of Erlang.
-\item {\bf turing} solve these to get the Turing prize.
 \end{itemize}
 
 The sections and subsections in this paper are marked appropriately.
@@ -132,13 +131,13 @@ replica processes.
 
 The store should function correctly if the master processes crashes.
 
-\subsection{turing: Make it work for arbitrary crashes}
+\subsection*{Making the program work for arbitrary crashes}
 
 Note: In general distributed data replication is very difficult to
 achieve.  If both the master and replica can crash at arbitrary times,
 and if arbitrary messages can be lost the problem is impossibly
-difficult to solve\footnote{There are some theorems about this, so only consider
-the simplest cases.}.
+difficult to solve\footnote{There are some theorems about this, 
+this is why I've only made a simple error case where only the master crashes.}.
 
 \section{Sending messages in a ring}
 
@@ -176,8 +175,7 @@ Write a simple mail server. The server should respond to 4 messages:
   send a message to
   the server, all the arguments are binaries. When the message arrives
   at the server the server should check that the user \verb+From+ has
-  password \verb+Pwd+ and that the user \verb+To+ exists.  \verb+To+
-  exists.
+  password \verb+Pwd+ and that the user \verb+To+ exists. 
 
   The possible responses are:
   
@@ -185,12 +183,12 @@ Write a simple mail server. The server should respond to 4 messages:
   
   \item \verb+eNoSuchUser+ -- if the person \verb+To+ does not exist.
   
-  \item \verb+ePadPassword+  -- if the person \verb+From+ does not have the
+  \item \verb+eBadPassword+  -- if the person \verb+From+ does not have the
   password \verb+Pwd+.
   
 \item \verb+{ok, MailId}+ -- if the mail was accepted. \verb+MailId+ is
   a unique identifier identifying this mail.
-  The mail should be stored in a mailbox associated with 
+  The mail should be stored in a mailbox 
   associated with the user \verb+To+ together with a timestamp.
  
 
@@ -206,7 +204,7 @@ Write a simple mail server. The server should respond to 4 messages:
   
   \item \verb+eNoSuchUser+ -- if the person \verb+To+ does not exist.
   
-  \item \verb+ePadPassword+  -- if the person \verb+From+ does not have the
+  \item \verb+eBadPassword+  -- if the person \verb+From+ does not have the
   password \verb+Pwd+.
   
 \item \verb+{ok, [{MailId,From,Header}]}+ -- returns a list of the mail
@@ -246,7 +244,7 @@ Write a simple mail server. The server should respond to 4 messages:
 
 \end{description}
 
-\subsection{optional: A sample session with the mail server}
+\subsection{A sample session with the mail server}
 
 Assume Alice has password \verb+ecila+  and Bob \verb+blurb+
 
