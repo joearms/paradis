@@ -1,0 +1,304 @@
+\documentclass[12pt]{hitec}
+
+\usepackage{fancyvrb}
+%% \usepackage{hyperref}
+
+\title{Assigments week 6}
+\author{Joe Armstrong}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+
+\section{Introduction}
+These problems are for lectures F6 and F7, held in week 6 of 2014.
+
+Additional material can be found in Chapters 11 to 14 of the course book
+{\sl Programming Erlang, 2'nd edition}.
+
+\section{Problems}
+
+This week I've put the problems into four categories:
+
+\begin{itemize}
+\item {\bf normal} solve these to get {\sl Godk\"{a}nd}.
+\item {\bf advance} solve these to get {\sl V\"{a}l Godk\"{a}nd}.
+\item {\bf optional} solve these to get a deeper understanding of the problem. You don't
+have to hand in your solutions to these, but solving them, or attempting them will
+deepen your understanding of Erlang.
+\item {\bf turing} solve these to get the Turing prize.
+\end{itemize}
+
+The sections and subsections in this paper are marked appropriately.
+
+\section{Simple Processes}
+
+
+Write the following routines:
+
+\subsection{normal: \texttt{double:start()}}
+
+\verb+double:start()+ creates a registered process called double.
+If you send it a message containing an integer it should
+double the integer and print the result.
+
+If it is sent a non-integer it should print an error message
+and crash.
+
+Start the double process and test that it works correctly.
+
+\subsection{normal: \texttt{monitor:start()}}
+
+\verb+monitor:start()+ should create a processes that starts and
+then monitors the double process that you made in the last section.
+ 
+If the monitor process detects that the double process has crashed
+it should print an error message and start a new double process.
+
+Start the monitor process. Send the double process something that causes it
+to crash. Then check that a new double process has been created and that
+the system has recovered from the error.
+
+\section{normal: Reliable Client-Server}
+
+Here we assume that the server might crash. If a client sends a message to
+and does not get a reply (this is detected by a timeout) the client
+waits a random time and tries again. It tries this strategy several times
+and gives up if the cannot get a reply from the server after 10 tries. 
+
+\begin{itemize}
+
+\item Create a registered server called double.
+
+\item If you send it an integer it doubles it and sends back the reply.
+
+\item It crashes if you send it an atom.
+
+\item Make a process that sleeps for a random time and sends a message
+  to the double server that causes it to crash.
+
+\item Make a monitor process that detects that the server has
+  crashed. It restarts the server after a random delay.
+
+\item Make a client function that sends a request to the server and
+  times out if the request is not satisfied. We can assume the server
+  has crashed. The client should wait a second and then try again.
+
+\item  Abort the client if it has tried more than ten times.
+\end{itemize}
+
+Hints: \verb+crypto:rand_uniform(Lo, Hi) -> N+
+Generates a random number \verb+N+, where \verb+ Lo =< N < Hi+.
+
+A sleep function can be defined as follows:
+
+\begin{Verbatim}
+sleep(T) ->
+    %% sleep for T milliseconds
+    receive
+      after T ->
+        true
+    end.
+\end{Verbatim}
+
+
+
+\section{advanced: Replicated Data}
+
+We're going to create two registered processes. Call them master and replica.
+The idea is that the master process will have a data store and that
+the replica process will have a copy of the store.
+
+Normally we will update and request data from the master process, but
+if the master process crashes we'll use the replica process.
+
+Write the following routines:
+
+\subsection{advanced: \texttt{store:start()}}.
+
+starts the master and replica processes.
+
+\subsection{advanced: \texttt{store:store(Key, Value)} and \texttt{store:fetch(Key)}}
+
+\verb+store(Key, Value)+ stores a Key-Value pair in the data store.  A
+master copy is kept in the master process, and a replica in the
+replica process. \verb+fetch(Key)+ retrieves the data from the store.
+
+Both \verb+store+ and \verb+fetch+ are interfacing functions which
+send and receive messages between the client and the master and
+replica processes.
+
+The store should function correctly if the master processes crashes.
+
+\subsection{turing: Make it work for arbitrary crashes}
+
+Note: In general distributed data replication is very difficult to
+achieve.  If both the master and replica can crash at arbitrary times,
+and if arbitrary messages can be lost the problem is impossibly
+difficult to solve\footnote{There are some theorems about this, so only consider
+the simplest cases.}.
+
+\section{Sending messages in a ring}
+
+\subsection{normal: \texttt{ring:start(N,M)}}
+
+\verb+ring:start(N,M)+ should create a ring of \verb+N+ processes,
+then send an integer \verb+M+ times round the ring. The message should
+start as the integer 0 and each process in the ring should increment
+the integer by 1.  After the message has been round the ring \verb+M+
+times its final value should be \verb+N*M+. 
+
+\verb+ring:start(N,M)+ should return the value of the last message
+(which should be \verb+N*M+) and make sure that all the processes in
+the ring have terminated.
+
+\subsection{advanced: \texttt{ring:time(N,M)}}
+
+Time how long it takes to run \verb+ring:start(N,M)+\\
+(Hint, use
+\verb+timer:tc(Mod, Func, Args)+\footnote{Consult the documentation for
+  the timer module.}).
+
+Measure the time it takes to send a message round the ring for
+reasonably large values of \verb+N+ and \verb+M+. The product
+of \verb+N*M+ should be a few million. Try this for tens of thousands to
+millions of processes. Experiment with the \verb+erl -smp disable+.
+
+\section{optional: A Mail Server}
+
+Write a simple mail server. The server should respond to 4 messages:
+
+\begin{description}
+
+\item \verb+{message,From,Pwd,To,Subject,Data}+\\
+  send a message to
+  the server, all the arguments are binaries. When the message arrives
+  at the server the server should check that the user \verb+From+ has
+  password \verb+Pwd+ and that the user \verb+To+ exists.  \verb+To+
+  exists.
+
+  The possible responses are:
+  
+  \begin{itemize}
+  
+  \item \verb+eNoSuchUser+ -- if the person \verb+To+ does not exist.
+  
+  \item \verb+ePadPassword+  -- if the person \verb+From+ does not have the
+  password \verb+Pwd+.
+  
+\item \verb+{ok, MailId}+ -- if the mail was accepted. \verb+MailId+ is
+  a unique identifier identifying this mail.
+  The mail should be stored in a mailbox associated with 
+  associated with the user \verb+To+ together with a timestamp.
+ 
+
+ \end{itemize}
+  
+ 
+\item \verb+{list_my_mail,User,Pwd}+\\
+  This message is used to check for mail. 
+
+  The possible responses are:
+  
+  \begin{itemize}
+  
+  \item \verb+eNoSuchUser+ -- if the person \verb+To+ does not exist.
+  
+  \item \verb+ePadPassword+  -- if the person \verb+From+ does not have the
+  password \verb+Pwd+.
+  
+\item \verb+{ok, [{MailId,From,Header}]}+ -- returns a list of the mail
+  waiting for the the user.
+  \end{itemize}
+
+ 
+\item \verb+{get_mail,MailId,Pwd}+\\
+  This message is used to fetch a specific mail. \verb+Pwd+ is  
+  the password of the user to whom the mail with Id \verb+mailId+ was sent.
+
+  The possible responses are:
+  
+  \begin{itemize}
+  
+  \item \verb+error+ -- the mail Id does not exist or the password is incorrect.
+  
+\item \verb+{ok, [{MailId,From,Header,Content,Timestamp}]}+ -- returns the mail
+  \end{itemize}
+
+ 
+\item \verb+{delete_mail,MailId,Pwd}+\\
+  This message is used to delete a specific mail. The arguments have the same
+  meaning as for the \verb+get_mail+ command.
+
+  The possible responses are:
+  
+  \begin{itemize}
+  
+  \item \verb+error+ -- the mail Id does not exist or the password is incorrect+
+    
+  \item \verb+{deleted, MailId}+ the mail was deleted.
+    
+  \end{itemize}
+
+  
+
+\end{description}
+
+\subsection{optional: A sample session with the mail server}
+
+Assume Alice has password \verb+ecila+  and Bob \verb+blurb+
+
+\begin{enumerate}
+
+\item {\sl Alice sends a message to Bob}. She sends the message:
+
+\begin{verbatim}
+{mail,<<"alice">>,<<"ecila">>,<<"bob">>,
+                 <<"hello">>,<<"This is ..">>)
+\end{verbatim}
+
+The mail server check that Alice's password is correct. It is correct so the
+mail is added to Jim's mailbox. The server responds \verb+{ok,43}+. This is mail
+number 43. The server adds a time stamp to the mail to record when it received
+the mail.
+
+\item {\sl Bob want to check his mail}. He sends the message:
+ 
+\verb+{check_my_mail,<<"bob">>,<<"blurb">>>}+
+
+To the server. Bob has supplied the correct password, so the server responds:
+
+\verb+{mails, [..., {mail,43,<<"alice">>,<<"hello">>}, ...]}+
+
+So Bob can see that he has got mail from Alice. 
+
+\item Bob retrieves the mail by sending the message:
+
+\verb+{get_mail,43,<<"blurb">>}+ 
+
+to the server. He wants to read mail 43 
+which the server knows is in Bob's mailbox. To do this Bob supplies his password
+(\verb+blurb+). The password is correct so the mail server replies:
+
+\begin{verbatim}
+{msg,43,<<"alice">>,
+        <<"hello">>,<<"This is ...">>,
+        <<"2013-02-12 12:12:34">>}
+\end{verbatim}
+
+
+
+Bob reads the mail.
+
+\item Bob deletes the mail by sending the message:
+
+\verb+{delete_mail,43,<<"blurb">>}+ to the server. The server responds
+\verb+{deleted,43}+
+
+\end{enumerate}
+
+
+
+\end{document}
