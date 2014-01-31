@@ -1,7 +1,7 @@
 \documentclass[12pt]{hitec}
 
 \usepackage{fancyvrb}
-\usepackage{hyperref}
+%% \usepackage{hyperref}
 
 \title{Assigments week 5}
 \author{Joe Armstrong}
@@ -157,7 +157,7 @@ Markdown is a language for converting a simple text markup language
 to HTML. The first exercise is to make a simple markdown processor.
 
 Markdown is described at
-\url{http://daringfireball.net/projects/markdown/}
+\verb+http://daringfireball.net/projects/markdown/+.
 
 Assume that the input to a markdown processor uses the following
 conventions to delimit the different blocks in input:
@@ -183,7 +183,8 @@ with two lines
 and more data">>).
 [{h1,<<"hello">>},
  {para,<<"This is a paragraph\nwith two lines\n"},
- {h1,<<"Another heading">>}]
+ {h1,<<"Another heading">>},
+ {para,<<"and more data">>}]
 \end{Verbatim}
 
 \subsection{advanced: \texttt{markdown:parse\_to\_html(L)}}
