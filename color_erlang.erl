@@ -45,5 +45,7 @@ latex_quote("%" ++ T) -> "\\%" ++ latex_quote(T);
 latex_quote("_" ++ T) -> "\\_" ++ latex_quote(T);
 latex_quote("$" ++ T) -> "\\$" ++ latex_quote(T);
 latex_quote("#" ++ T) -> "\\#" ++ latex_quote(T);
+latex_quote("~" ++ T) -> "\\textasciitilde{}" ++ latex_quote(T);
+latex_quote("\\" ++ T) -> "$\\backslash$" ++ latex_quote(T);
 latex_quote([H|T])    -> [H|latex_quote(T)];
 latex_quote([])       ->  [].

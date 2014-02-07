@@ -5,6 +5,12 @@ MODS := $(wildcard *.erl)
 %.beam: %.erl
 	erlc -W $<
 
+test: week5.beam
+
+week5.beam: week5.erl
+	erlc week5.erl
+
+
 all: week4_problems.pdf beams
 	./make_slides f2-f3.org
 

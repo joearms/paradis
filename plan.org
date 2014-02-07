@@ -123,7 +123,7 @@ and showing how this draws upon what we have learned in previous lectures.
 ** Streaming music
 ** Parallel and Sequential servers
 
-* W7/F9 - Frameworks2 - Websockets, Ets, Dets - Chapters 17,18,19 
+* W7/F9 - Frameworks2 - Websockets, - Chapters 17,18, 
 
 ** UDP
 ** TCP
@@ -131,11 +131,11 @@ and showing how this draws upon what we have learned in previous lectures.
 ** Talking to the browser
 ** Chat widget
 ** Browser graphics
+
+* W8/F10 - ETS DETS Mnesia Database,Debugging etc. Chapters 19 20,21
 ** ETS
 ** DETS
 
-
-* W8/F10 - Mnesia Database,Debugging etc. Chapters 20,21
 ** Mnesia the Erlang data base
 ** Queries
 ** Transactions

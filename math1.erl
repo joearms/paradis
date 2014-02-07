@@ -4,8 +4,6 @@
 double([]) -> [];
 double([H|T]) -> [2*H|double(T)].
 
-
-
 sum(L) -> sum_helper(L, 0).
 
 sum_helper([], N) -> N;

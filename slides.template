@@ -31,7 +31,7 @@
   frame=single,
   framerule=1pt,
   escapeinside={(*@}{@*)},
-  basicstyle=\ttfamily,
+  basicstyle=\ttfamily\scriptsize,
   columns=fullflexible}}{}
 
 \lstnewenvironment{shell}{%
@@ -39,7 +39,7 @@
   frame=single,
   framerule=1pt,
   escapeinside={(*@}{@*)},
-  basicstyle=\ttfamily,
+  basicstyle=\ttfamily\small,
   columns=fullflexible}}{}
 
 

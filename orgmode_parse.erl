@@ -16,17 +16,30 @@ transform([X]) ->
     io:format("A0=~p~n",[A0]),
     ModS = proplists:get_value("process", A0),
     Mod = list_to_atom(ModS),
-    apply(Mod, process, [F, A0, Blocks2]).
+    case (catch apply(Mod, process, [F, A0, Blocks2])) of
+	{'EXIT', {undef, LL}} ->
+	    %% elib2_misc:dump("error.tmp", hd(LL)),
+	    HH = hd(LL),
+	    io:format("Error Undefined Module:~p func:~p~n",
+		      [element(1,HH), element(2,HH)]);
+	Z ->
+	    io:format("Z:~p~n",[Z])
+    end.
 
-extract_header([{p,"\n#+STARTUP:" ++ _}|T]) ->
+extract_header([{p,"#+STARTUP:" ++ _}|T]) ->
     extract_header(T);
 extract_header([{kv,A}|T]) ->
     {A, T};
-extract_header(_) ->
-    io:format("File has invalid header~n").
+extract_header(L) ->
+    io:format("File has invalid header:~p~n",[hd(L)]).
 
 parse(Bin) ->
-    parse("\n" ++ binary_to_list(Bin), []).
+    L = parse("\n" ++ binary_to_list(Bin), []),
+    fixup(L).
+
+fixup([{p,"\n" ++ X}|T]) -> [{p,X}|T];
+fixup(X) -> X. 
+    
 
 parse([], L) ->
     reverse(L);
@@ -61,8 +74,8 @@ get_body([H|T] = X, Stop, L) ->
 	{yes, X1} -> {reverse(L), X1};
 	no -> get_body(T, Stop, [H|L])
     end;
-get_body([], Stop, _) ->
-    io:format("Note terminated:~p~n",[Stop]),
+get_body([], Stop, L) ->
+    io:format("Note terminated:~p Clue:~p~n",[Stop,lists:reverse(L)]),
     exit(eBadInput).
 
 is_stop(X, []) ->
@@ -95,7 +108,6 @@ pass1(X)                 -> X.
 parse_kv(Str) ->
     Lines = string:tokens(Str,"\n"),
     {kv, [kv(I) || I<- Lines]}.
-
 
 kv(Str) ->
     case string:tokens(Str, ":") of

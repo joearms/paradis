@@ -9,23 +9,17 @@ affiliation: Ericsson AB
 process: orgmode_plugin_slides
 #+END_kv
 
-* Crib sheet
-Note that the slide maker is in development, so it is a good idea to save your
-work regularly and check the output.
+* Box
 
-\verb+./make_slides f2-f3.org+ makes this slide set.
-
-
-** Alt+Up/down arrow moves a heading up  down
-** Shift+Tab open closes all levels - but make sure you are at the top 
-(this works on Ubuntu, check that it works the same way on the mac)
-
-
-** Alt+Up/down arrow moves a heading up  down
-** Shift+Tab open closes all levels - but make sure you are at the top 
-(this works on Ubuntu, check that it works the same way on the mac)
-
-
+\begin{tikzpicture}
+\node [mybox] (box){%
+    \begin{minipage}{0.80\textwidth}
+        To calculate the horizontal position the kinematic differential
+        equations are needsslied:
+    \end{minipage}
+};
+\node[fancytitle, right=10pt] at (box.north west) {Unix};
+\end{tikzpicture}
 * Test Erlang Code Coloring
 #+BEGIN_erlang
 fac1(0) ->
@@ -46,6 +40,21 @@ $erl
 1> X = 1234.
 1234
 #+END_shell
+* Crib sheet
+Note that the slide maker is in development, so it is a good idea to save your
+work regularly and check the output.
+
+\verb+./make_slides f2-f3.org+ makes this slide set.
+
+
+** Alt+Up/down arrow moves a heading up  down
+** Shift+Tab open closes all levels - but make sure you are at the top 
+(this works on Ubuntu, check that it works the same way on the mac)
+
+
+** Alt+Up/down arrow moves a heading up  down
+** Shift+Tab open closes all levels - but make sure you are at the top 
+(this works on Ubuntu, check that it works the same way on the mac)
 
 * Four Up Printing
 
@@ -56,19 +65,6 @@ This is possible.
 ** pages per sheet = 4
 ** Border = single hairline
 ** Then go into the PDF menu and save as PDF
-
-
-* Box
-
-\begin{tikzpicture}
-\node [mybox] (box){%
-    \begin{minipage}{0.80\textwidth}
-        To calculate the horizontal position the kinematic differential
-        equations are needsslied:
-    \end{minipage}
-};
-\node[fancytitle, right=10pt] at (box.north west) {Unix};
-\end{tikzpicture}
 
 * Image Image
 
@@ -82,3 +78,7 @@ This is possible.
 \draw [->] (one.east) -- (two.west);
 \end{tikzpicture}
 
+* What we want
+** Multiple Outputs
+** Ease of input
+** Precision

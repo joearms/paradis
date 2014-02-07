@@ -1,0 +1,116 @@
+#+STARTUP: overview, hideblocks
+#+BEGIN_kv
+title: Databases + OTP
+subtitle: Lectures F10 + F11 (Chapters 19..22)
+author: Joe Armstrong
+copyright: \copyright 2014 -- Joe Armstrong
+email: joe.armstrongericsson.com, joearms@gmail.com
+affiliation: Ericsson AB
+process: orgmode_plugin_slides
+#+END_kv
+* W8/F10 - Mnesia Database,Debugging etc. Chapters 19, 20,21
+** Mnesia the Erlang data base
+** Queries
+** Transactions
+** Table viewer
+** Debugging
+** Profiling
+** Coverage
+
+* W8/F11 - OTP - Chapter 22
+** Road to the gen server
+** The Gen server in 5 steps
+** Abstracting out concurrency
+
+* Primitives for implementing databases
+** ETS - Erlang term storage.
+** DETS - ``Disk'' ETS.
+
+\verb+ets+ and \verb+dets+ provide {\sl low level primitives} for 
+implementing databases. But they are useful on their own.
+ 
+* ETS
+** Very fast in-memory hash tables.
+** No transations.
+** Can share data between processes, but there is no locking when writing to the tables.
+** Can save and restore to file.
+** Object are stored off-stack and off-heap. This means objects in ETS tables do not slow down the garbage collection, but lookups copy data from tables to the heap.
+
+* DETS
+** Data is stored on disk.
+** Interface ``similar to'' ETS (but not identical).
+** Has crash recovery. DETS tables are repaired on restart if they were not closed properly. This can happen after a system crash.
+
+* ETS sets
+#+BEGIN_shell
+1> ets:new(phone_numbers, [set,named_table]). 
+phone_numbers
+2> ets:insert(phone_numbers, {joe,1234}).
+true
+3> ets:insert(phone_numbers, {bill,123456}).
+true
+4> ets:lookup(phone_numbers, joe).
+[{joe,1234}]
+5> ets:insert(phone_numbers, {joe,2234}).      
+true
+6> ets:lookup(phone_numbers, joe).       
+[{joe,2234}]
+#+END_shell
+
+* ETS bags
+#+BEGIN_shell
+7> ets:delete(phone_numbers).
+true
+9> ets:new(phone_numbers, [bag,named_table]).
+phone_numbers
+10> ets:insert(phone_numbers, {joe,1123}).    
+true
+11> ets:insert(phone_numbers, {joe,2244}).
+true
+12> ets:lookup(phone_numbers, joe).           
+[{joe,1123},{joe,2244}]
+#+END_shell
+
+* ETS save and restore
+
+** Save the table and exit:
+
+#+BEGIN_shell
+13 > ets:tab2file(phone_numbers, "foo").
+ok
+15> 
+BREAK: (a)bort (c)ontinue (p)roc info (i)nfo (l)oaded
+       (v)ersion (k)ill (D)b-tables (d)istribution
+a
+#+END_shell
+
+** Some time later ..
+
+#+BEGIN_shell
+joe:paradis joe$ erl
+Erlang/OTP 17 [RELEASE CANDIDATE 1] [erts-6.0] [source] [64-bit] [smp:2:2] [async-threads:10] [hipe] [kernel-poll:false]
+
+Eshell V6.0  (abort with ^G)
+1> ets:file2tab("foo").
+{ok,phone_numbers}
+2> ets:lookup(phone_numbers, joe). 
+[{joe,1123},{joe,2244}]
+#+END_shell
+   
+* ETS reference
+** http://learnyousomeerlang.com/ets.
+** http://www.erlang.org/doc/man/ets.html.
+
+* DETS
+** Yawn ...
+** Same as ETS (almost) RTFM.
+** There are some exercises on ets and dets.
+
+
+
+
+
+
+
+
+

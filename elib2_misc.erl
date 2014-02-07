@@ -1,6 +1,6 @@
 %% Copyright (c) 2006-2009 Joe Armstrong
 %% See MIT-LICENSE for licensing information.
-%% Time-stamp: <2013-11-12 14:58:18 ejoearm>
+%% Time-stamp: <2014-02-07 08:53:02 joe>
 
 -module(elib2_misc).
 
@@ -1804,6 +1804,7 @@ string2latex("}" ++ T)     -> "\\}" ++ string2latex(T);
 string2latex("_" ++ T)     -> "\\_" ++ string2latex(T);
 string2latex("<" ++ T)     -> "$<$" ++ string2latex(T);
 string2latex(">" ++ T)     -> "$>$" ++ string2latex(T);
+string2latex("\\" ++ T)     -> "\\\\" ++ string2latex(T);
 string2latex("&lt;" ++ T)  -> "$<$" ++ string2latex(T);
 string2latex("&amp;" ++ T) -> "\\&" ++ string2latex(T);
 string2latex("&" ++ T)     -> "\\&" ++ string2latex(T);
