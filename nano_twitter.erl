@@ -2,7 +2,7 @@
 -compile(export_all).
 
 %% in terminal one
-%%   $ erl -noshell -sname tweets -s nano_twitter start
+%%   $ erl -noshell -sname twit -s nano_twitter start
 %% in termianal two
 %%   $ erl -sname anything
 %%   > nano_twitter:connect().
@@ -22,10 +22,10 @@ watcher() ->
 	end.
 
 connect() ->
-    pong = net_adm:ping('twit@joe').
+    pong = net_adm:ping('twit@air').
 
 tweet(Msg) ->
-    rpc:cast('twit@joe', erlang, send, [twit, Msg]).
+    rpc:cast('twit@air', erlang, send, [twit, Msg]).
 
 print(X) ->
     io:format("~p~n",[X]).

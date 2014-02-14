@@ -407,10 +407,10 @@ end.
 
 * Philosophy
 
-** Let's be ``truly OO''
+** Let's be ``truly OO''.
 ** To get a thing in the browser to do something you send it a message.
 ** When somthing interesting happens in the browser you get sent a message.
-** This is NOT ajax, nor long-polling
+** This is NOT ajax, nor long-polling.
 
 * Sending messages to DIVS
 
@@ -422,7 +422,7 @@ end.
 \begin{Verbatim}
 connect_to_erlang("localhost", 1456, "clock1");
 \end{Verbatim}
-** Step 3) in Elang the function \verb+clock1:start+ is spawned:
+** Step 3) in Erlang the function \verb+clock1:start+ is spawned:
 \begin{Verbatim}
 start(Browser) ->
     Browser ! [{cmd,fill_div}, {id,clock}, 

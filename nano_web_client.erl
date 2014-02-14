@@ -2,7 +2,7 @@
 -compile(export_all).
 
 nano_get_url() ->
-    nano_get_url("www.sics.se").
+    nano_get_url("www.google.com").
 
 nano_get_url(Host) ->
     {ok,Socket} = gen_tcp:connect(Host,80,
