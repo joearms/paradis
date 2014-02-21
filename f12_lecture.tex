@@ -1,0 +1,298 @@
+\documentclass[10pt]{article}
+
+\usepackage{fancyvrb}
+%% \usepackage{hyperref}
+
+\title{Parallel and Distributed Programs\\
+Lecture F12\\
+24 February, 2014
+}
+\author{Joe Armstrong}
+
+\fvset{frame=single,numbers=left,numbersep=3pt}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+
+\section{Introduction}
+In this lecture we'll look at some some ways of writing {\sl
+  potentially parallel} programs.
+
+In Erlang we write concurrent programs. The algorithms in the lecture
+will run sequentially if run on a single core machine, but will run
+in parallel if run on a multi-core computer. That's why they are
+called ``potentially parallel.''
+
+
+\section{Parallel Processing Functions}
+
+To make a parallel program either the programmer must say what is to be
+done in parallel, or the system must discover this automatically.
+
+Automatic parallelisation of programs has been studied for many years.
+It is very good for certain classes of problem (solving Laplace's
+equation on a grid) and very bad for other classes of problem.
+
+\subsection{ParBegin .. ParEnd}
+
+Fro the early days of programming constructs have been added to
+languages to allow programmers to express parallel computations:
+
+\begin{verbatim}
+ParBegin
+   x;
+   y;
+   z;
+ParEnd
+\end{verbatim}
+
+\verb+Fork+ ... \verb+Join+ is also used.
+
+Both \verb+ParBegin+ .. \verb+ParEnd+ and \verb+Fork+ ... \verb+Join+ can be 
+implemented using the lower level primitives \verb+promise+ and \verb+yield+
+
+\subsection{Promises}
+
+A ``{\sl Promise}'' is a commitment to deliver a value in the future.
+
+\begin{verbatim}
+    P 
+    |
+    |  promise(F)  
+T1  +------>-------+
+    |              |
+    |              | 
+    |              |
+    +------<-------+
+    |
+    |
+T2  +
+    |
+\end{verbatim}
+
+At some time \verb+T1+ a process \verb+P+ wants to compute \verb+F()+ so it calls
+\verb+promise(F)+ which returns a tag \verb+Tag+. \verb+P+ continues,
+and \verb+F()+ is computed in parallel. At some time later (\verb+T2+) when 
+\verb+P+ wants the return value it calls \verb+yield(Tag)+. \verb+yield+ blocks until
+the result of the computation is available.
+
+\VerbatimInput{promises.erl}
+
+\verb+promises:test1()+ blocks until the result is available:
+
+\begin{Verbatim}
+> promises:test1().
+.... yawn .. 
+...  shell is blocked ...
+... I can't do anything ...
+165580141
+\end{Verbatim}
+
+Using a promise we can do {\sl useful things} \textregistered{} while
+the promised computation is being performed:
+
+\begin{Verbatim}
+2> Tag = promises:test2().
+Ref<0.0.0.104>
+3> promises:query(Tag).
+not_finished
+4> 213813813861736*128763816381638163.
+27531482667950334890792863030968
+5> promises:query(Tag).               
+not_finished
+6> 19379127391273971239719379173979372193137*18763861238183638.
+363627257286948472579176034410575587459129627874409292406
+7> promises:query(Tag).                                        
+{finished,165580141}
+\end{Verbatim}
+
+{\sl Note: If a command fails in the shell, the promise will not
+be honoured, the results will be send back to the old shell which has died!}
+
+\subsection{Broken Promises}
+
+What happens if \verb+P+ dies {\sl Before} the worker has computed
+its response? Should the worker be killed?
+
+What happens if the worker dies while computing F. Who should be told?
+Who should be killed?
+
+Distributed Computing is the art of repairing broken promises.
+
+\subsection{Maps}
+
+Here is a simple implement of \verb+smap+ (Sequential map) and
+\verb+pmap+ (Parallel map).
+
+\VerbatimInput{maps.erl}
+
+In the non-failure case \verb+smap+ and \verb+pmap1+ behave
+identically.
+
+\begin{Verbatim}
+1> Double = fun(X) -> 2*X end.
+#Fun<erl_eval.6.71889879>
+2> maps:smap(Double,[1,2,3,4]).
+[2,4,6,8]
+3> maps:pmap(Double,[1,2,3,4]). 
+[2,4,6,8]
+\end{Verbatim}
+
+Now let's try and double the list \verb+[1,2,3,a,3,4,b]+. In the
+failure case \verb+smap+ will fail on the first error (ie when
+computing \verb+2*a+) but \verb+pmap+ will fails for every element in
+the list.
+
+\begin{Verbatim}
+4> maps:smap(Double,[1,2,a,3,4,b]).
+** exception error: an error occurred when evaluating an 
+   arithmetic expression
+     in operator  */2
+        called as 2 * a
+     in call from maps:'-smap/2-lc$^0/1-0-'/2 (maps.erl, line 5)
+     in call from maps:'-smap/2-lc$^0/1-0-'/2 (maps.erl, line 5)
+5> maps:pmap(Double,[1,2,a,3,4,b]).
+[2,4,
+ {'EXIT',{badarith,[{erlang,'*',[2,a],[]},
+                    {maps,'-pmap/2-fun-0-',3,
+                          [{file,"maps.erl"},{line,10}]}]}},
+ 6,8,
+ {'EXIT',{badarith,[{erlang,'*',[2,b],[]},
+                    {maps,'-pmap/2-fun-0-',3,
+                          [{file,"maps.erl"},{line,10}]}]}}]
+
+\end{Verbatim}
+
+\subsection{Broken Maps}
+
+The idea of \verb+pmap+ seems simple {\sl but it is not}
+
+\begin{description}
+\item One dies, kill all\\ 
+Assume one of the computations of
+\verb+F(I)+ fails. We could kill all the other computations. But
+what happens if we don't really care if the computation failed? Many
+of the earlier computation might have suceeded so why drop the
+results. The computations might have taken a long time, shame to
+ignore the result.
+
+\item Limit the concurrency\\
+\verb+pmap+ will be {\sl too parallel} is we have a list of 1M processes
+and the fucntion is {\sl Double} then pmaping would be wrong.
+\end{description}
+
+
+
+{\sl Discussion:} \verb+map+ and \verb+pmap+ have identical behaviour
+when there are no errors. In \verb+pmap+ we fail immediately on the
+first error. In \verb+pmap+ we cannot easily fail on the first error.
+(We could link all the parallel processes togther, and let them all
+die if one dies)
+
+\section{Components}
+
+\subsection{Server}
+
+A server has state. When it receives requests from a client,
+performes a computation which might update the state and then sends
+a message back to the client.
+
+(This is the server in the so call Client-Server Model)
+
+\subsection{Publisher}
+
+A publisher has a list of channels. \verb+{Channel, [Pid1, Pid2, ...]}+
+The publisher accepts three input messages.
+
+\begin{description}
+
+\item \verb+{subscribe,Channel,Pid}+\\
+  Adds \verb+Pid+ to the list
+  of pids associated with \verb+ChannelName+. Creates a new channel if
+  a channel does not exist.
+
+\item \verb+{unsubscript_all,Pid}+\\
+removes all subscriptions that Pid has.
+
+\item \verb+{unsubscript_all,Channel, Pid}+\\
+Remove the \verb+Pid+ to \verb+Channel+.
+  
+\item \verb+{publish,Channel,Msg}+\\ 
+Sends Msg to all the subscribers associated with
+\verb+Channel+. It is not an error to send a message to a channel with
+zero subscribers.
+
+\end{description}
+
+Publisher has no errors.
+
+A publisher is the PUB in the so called PUB-SUB model.
+
+Note: PUB-SUB is an enormously important model:
+Twitter, Facebook,  Mailing Lists, IRC Newsletters are all varients on PUB-SUB
+
+Actually PUB-SUB is a confusing term. It could mean the
+names of two fdffierent processes. A Publisher Process that talks to a Subscriber
+Process. Or, it could mean the name of two different message sent to a publisher
+process. 
+
+\subsection{Dealer}
+A dealer has \verb+N+ output ports. 
+Messages sent to the input ports are round-robbined to
+the output ports.
+
+\begin{description}
+\item \verb+{add_output,Pid}+\\
+add Pid to the list of output ports.
+\item \verb+{send,Message}+\\
+  Send \verb+Message+ to one of the output ports.
+  
+  {\sl errors: There are no output ports}
+\end{description}
+
+\subsection{Router}
+
+A router has an internal routing table which is a list of pairs of the form.
+\verb+[{Tag,OutPort}]+. Message sent to the input port must have
+a tag, these messages are sent to the appropriate output port.
+
+
+\begin{description}
+\item \verb+{add_route,Tag,Pid}+\\
+  Adds a routing table entry \verb+{Tag, Pid}+ to the
+  routing table. 
+
+  {\sl errors: Tag already used}. 
+  
+\item \verb+{unroute,Tag}+\\
+  Removes a routing table entry with \verb+Tag+ from the routing table.
+  
+\item \verb+{send,Tag,Msg}+\\
+  Sends \verb+Msg+ to the process assocated with \verb+Tag+.
+  
+  {\sl errors: No process associated with Tag}
+  
+\end{description}
+\section{Messaging Format}
+
+All Messages are of the form: \verb+{do,Cmd,Epid}+
+If the command works it does what it is supposed to do. If it fails
+it sends a message to \verb+Epid+
+
+\section{Router Code}
+
+\VerbatimInput{router.erl}
+
+\section{Publisher Code}
+
+Here's a simple PUB-SUB publisher process. There is no error
+handling.
+
+\VerbatimInput{pubsub0.erl}
+
+\end{document}
+
+

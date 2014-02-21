@@ -20,10 +20,12 @@ add_index(File, C) ->
 to_lower(B) ->
     list_to_binary(string:to_lower(binary_to_list(B))).
 
-lookup() ->
-    ets:file2tab("index.ets"),
-    V = ets:lookup(index,<<"armstrong">>),
-    ets:delete(index),
-    V.
+open() ->
+    ets:file2tab("index.ets").
+
+lookup(X) ->
+    ets:lookup(index,X).
+
+    
 
 
