@@ -54,11 +54,17 @@ test_random_io() ->
 
 test_dir_ops() ->
     {ok, L} = file:list_dir("."),
-    [I || I <- L, ].
+    [classify(I) || I <- L].
 
 classify(F) ->
     case filelib:is_file(F) of
 	true ->
 	    file;
 	false ->
-	    case filel
+	    case filelib:is_dir(F) of
+		true ->
+		    dir;
+		false ->
+		    unknown
+	    end
+    end.

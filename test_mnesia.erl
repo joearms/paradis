@@ -10,7 +10,7 @@
 
 -record(shop, {item, quantity, cost}).
 -record(design, {id, plan}).
--record{cost, {name,price}.
+-record(cost, {name,price}).
 
 do_this_once() ->
     mnesia:create_schema([node()]),
@@ -58,9 +58,9 @@ demo(join) ->
 			     X#shop.quantity < 250,
 			     Y <- mnesia:table(cost),
 			     X#shop.item =:= Y#cost.name,
-			     Y#cost.price < 2
+			     Y#cost.price < 2])).
 
-do(Q) ->
+do(Q) -> 
     F = fun() -> qlc:e(Q) end,
     {atomic, Val} = mnesia:transaction(F),
     Val.

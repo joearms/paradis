@@ -39,6 +39,10 @@ Several databases have been implemented in Erlang:
 
 
 
+* new
++ this is
++ a new line
+
 * ETS sets
 #+BEGIN_shell
 1> ets:new(phone_numbers, [set,named_table]). 
@@ -420,6 +424,7 @@ handle_call(clear,_From, _State)  -> {reply, ok, 0}.
 ** gen\_server -- client server model.
 ** gen\_fsm -- finite state machine.
 ** supervisor.
+
 
 
 

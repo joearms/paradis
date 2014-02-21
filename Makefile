@@ -1,15 +1,9 @@
 .SUFFIXES: .erl .beam .yrl
 
 MODS := $(wildcard *.erl)
-
+ERLC = "/Users/joe/nobackup/otp_src_R16B/bin/erlc"
 %.beam: %.erl
-	erlc -W $<
-
-test: week5.beam
-
-week5.beam: week5.erl
-	erlc week5.erl
-
+	${ERLC} -W $<
 
 all: week4_problems.pdf beams
 	./make_slides f2-f3.org
