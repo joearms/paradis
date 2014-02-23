@@ -18,7 +18,7 @@ Lecture F12\\
 \tableofcontents
 
 \section{Introduction}
-In this lecture we'll look at some some ways of writing {\sl
+In this lecture we'll look at some ways of writing {\sl
   potentially parallel} programs.
 
 In Erlang we write concurrent programs. The algorithms in the lecture
@@ -27,19 +27,72 @@ in parallel if run on a multi-core computer. That's why they are
 called ``potentially parallel.''
 
 
-\section{Parallel Processing Functions}
-
 To make a parallel program either the programmer must say what is to be
 done in parallel, or the system must discover this automatically.
 
 Automatic parallelisation of programs has been studied for many years.
-It is very good for certain classes of problem (solving Laplace's
-equation on a grid) and very bad for other classes of problem.
+It is very good for certain classes of problem
+and very bad for other classes of problem.
+
+\subsection{GPU Parallism}
+
+GPU = Graphics Programming Unit. All the computations are the same.
+
+For example: To compute the temperature distribution over a conducting
+surface we divide the surface into a grid and repeatedly average the
+temperatures at the four corners of the squares surrounding each of
+the points on the grid.
+ 
+\begin{verbatim}
+
+             | 
+             X (i,j+1)
+             |
+             |
+----X--------X-------X----
+  (i-1,j)  (i,j)   (i+1,j)   
+             |
+             |
+             X (i,j-1)
+             |
+             |
+
+  T[k+1] = (T[k][i,j+1] + T[k][i-1,j] + 
+            T[k][i+1,j] + T[k][i,j-1])/4
+\end{verbatim}
+
+Erlang is not suited for this.
+
+\subsection{Embarrassing Parallelism}
+
+The nature of the problem is naturally parallel and there are a lot of
+things to be done.  There is little or no communication between the
+tasks. The parallelism is obvious and inherent in the problem.
+
+Example: A web server with millions of simultaneous connected users.
+Erlang is very good at this.
+
+\subsection{Declarative Parallelism}
+
+Sometimes called ``functional parallelism''. In a pure functional
+programming language \verb+f(g(...), h(...))+ \verb+g(...)+ and
+\verb+h(...)+ can be evaluated in any order and in parallel.
+
+Unfortunately, while this is true, it is still a research problem how
+to map the computation onto the hardware we have {\sl today}, and {\sl
+  hardware changes in time} so the solution we find today will not
+work tomorrow.
+
+There have been a large number of attempts to build parallel hardware to
+do this. None have provided lasting solutions.
+
+\section{Expressing Parallel Behaviour}
+
+Different languages have syntactic constructs for expressing parallel
+behavior, or can do this algorithmically.  This section reviews some
+commonly used methods for expressing parallel behavior.
 
 \subsection{ParBegin .. ParEnd}
-
-Fro the early days of programming constructs have been added to
-languages to allow programmers to express parallel computations:
 
 \begin{verbatim}
 ParBegin
@@ -49,10 +102,15 @@ ParBegin
 ParEnd
 \end{verbatim}
 
+The above expression means evaluate \verb+x+, \verb+y+ and \verb+z+ in parallel. 
+
 \verb+Fork+ ... \verb+Join+ is also used.
 
+If shared memory is involved, simultaneous access to the shared memory must be
+avoided. If no shared memory is involved the computations can proceed in parallel.
+
 Both \verb+ParBegin+ .. \verb+ParEnd+ and \verb+Fork+ ... \verb+Join+ can be 
-implemented using the lower level primitives \verb+promise+ and \verb+yield+
+implemented using the lower level primitives \verb+promise+ and \verb+yield+.
 
 \subsection{Promises}
 
@@ -78,6 +136,8 @@ At some time \verb+T1+ a process \verb+P+ wants to compute \verb+F()+ so it call
 and \verb+F()+ is computed in parallel. At some time later (\verb+T2+) when 
 \verb+P+ wants the return value it calls \verb+yield(Tag)+. \verb+yield+ blocks until
 the result of the computation is available.
+
+Promises can be implmeneted in Erlang as follows:
 
 \VerbatimInput{promises.erl}
 
@@ -143,7 +203,7 @@ identically.
 
 Now let's try and double the list \verb+[1,2,3,a,3,4,b]+. In the
 failure case \verb+smap+ will fail on the first error (ie when
-computing \verb+2*a+) but \verb+pmap+ will fails for every element in
+computing \verb+2*a+) but \verb+pmap+ will fail for every bad element in
 the list.
 
 \begin{Verbatim}
@@ -168,44 +228,115 @@ the list.
 
 \subsection{Broken Maps}
 
-The idea of \verb+pmap+ seems simple {\sl but it is not}
+The idea of \verb+pmap+ seems simple {\sl but it is not}.
+Here are some of the problems that might occur.
 
 \begin{description}
-\item One dies, kill all\\ 
+
+\item A computation in the map fails\\ 
 Assume one of the computations of
 \verb+F(I)+ fails. We could kill all the other computations. But
 what happens if we don't really care if the computation failed? Many
-of the earlier computation might have suceeded so why drop the
-results. The computations might have taken a long time, shame to
-ignore the result.
+of the earlier computations might have succeeded so why drop the
+results? The computations might have taken a long time, it would be a  shame to
+loose the results.
 
-\item Limit the concurrency\\
-\verb+pmap+ will be {\sl too parallel} is we have a list of 1M processes
-and the fucntion is {\sl Double} then pmaping would be wrong.
+\item We have too much concurrency\\
+\verb+pmap+ will be {\sl too parallel} if we have a list of 1M processes
+and the function is {\sl Double} then pmapping the list would be wrong.
+We'd create too many processes.
+
+\item The overheads are too great\\
+It might turn out that creating a parallel computation
+costs more than just doing the sequential computation.
+
 \end{description}
 
-
-
-{\sl Discussion:} \verb+map+ and \verb+pmap+ have identical behaviour
+{\sl Discussion:} \verb+map+ and \verb+pmap+ have identical behavior
 when there are no errors. In \verb+pmap+ we fail immediately on the
 first error. In \verb+pmap+ we cannot easily fail on the first error.
-(We could link all the parallel processes togther, and let them all
-die if one dies)
+(We could link all the parallel processes together, and let them all
+die if any one dies)
+
+\subsection{Map-Reduce}
+
+Map-reduce is the name given to a method of parallelising
+computations.  Note: The word ``map'' does not mean the same as the
+word map used in functional programming. 
+
+A full map-reduce framework provides the following:
+
+\begin{itemize}
+
+\item A way of starting a number of parallel computations.
+
+\item A number of parallel proceses which perform computations. The map processes
+  performs some computation and sends a stream of \verb+{Key,Value}+
+  results to a reduce process.
+  
+\item A reduce process which merges values with the same Key.
+\end{itemize}
+
+For example: Calculating the frequency of words in a large set of
+documents.  Assume the number of documents is \verb+K+.
+
+Here's how we might do this in Erlang:
+
+\begin{itemize}
+\item We spawn a reducer process, Call this process \verb+Reducer+.
+\item We spawn \verb+K+ parallel processes (workers) , and give each
+  process the name of a file to work on, and the process identifier
+  \verb+Reducer+.
+
+\item Each worker analyses the data in the file it was given and sends
+  a sequence of \verb+{Word,Count}+ pairs to the reducer process.
+  For example, if the word ``tuple'' occurred ten times in a
+  document it would send a \verb+{<<"tuple">>,10}+ tuple to the
+  reduce process.
+
+\item The reducer process merges the word count streams. So for
+  example if it has received the tuples \verb+{<<"tuple">>,10}+ and
+  \verb+{<<"tuple">>,15}+ it will know that the number of times the
+  word has been seen is 25.
+
+\end{itemize}
+
+Several practical issues have to be dealt with when implementing
+map-reduce:
+
+\begin{itemize}
+
+\item Termination. How do we know when the map phase has terminated.
+  Should the reducer wait for all map processes to terminate before
+  it terminates.
+
+\item Bottlenecks. The reduce process could become a bottleneck. All
+  the results eventually go to a single process. We might want to
+  avoid this.
+\end{itemize}
+
+In practice we would probably limit the time for a map-reduce
+operation to a fixed time, and build a tree of reducers. In the
+word-count example we could build two reducers (one for words
+beginning \verb+a..m+ and \verb+n..z+ or 26 reducer processes for
+letters starting \verb+a+, \verb+b+ and so on.
 
 \section{Components}
 
+Parallel systems are often build from compents. Here are afew examples:
+
 \subsection{Server}
 
-A server has state. When it receives requests from a client,
-performes a computation which might update the state and then sends
+A server has state. When it receives requests from a client, it
+performs a computation which might update the state and then sends
 a message back to the client.
 
 (This is the server in the so call Client-Server Model)
 
 \subsection{Publisher}
 
-A publisher has a list of channels. \verb+{Channel, [Pid1, Pid2, ...]}+
-The publisher accepts three input messages.
+A publisher has a list of channels. \verb+[{Channel, [Pid1, Pid2, ...]}]+
+The publisher accepts four input messages.
 
 \begin{description}
 
@@ -231,22 +362,25 @@ Publisher has no errors.
 
 A publisher is the PUB in the so called PUB-SUB model.
 
-Note: PUB-SUB is an enormously important model:
-Twitter, Facebook,  Mailing Lists, IRC Newsletters are all varients on PUB-SUB
+Note: PUB-SUB is an enormously important model: Twitter, Facebook,
+Mailing Lists, IRC Newsletters are all variants on PUB-SUB
 
-Actually PUB-SUB is a confusing term. It could mean the
-names of two fdffierent processes. A Publisher Process that talks to a Subscriber
-Process. Or, it could mean the name of two different message sent to a publisher
-process. 
+Actually PUB-SUB is a confusing term. It could mean the names of two
+different processes. A Publisher Process that talks to a Subscriber
+Process. Or, it could mean the name of two different message sent to a
+publisher process.
 
 \subsection{Dealer}
+
 A dealer has \verb+N+ output ports. 
 Messages sent to the input ports are round-robbined to
 the output ports.
 
 \begin{description}
+
 \item \verb+{add_output,Pid}+\\
 add Pid to the list of output ports.
+
 \item \verb+{send,Message}+\\
   Send \verb+Message+ to one of the output ports.
   
@@ -258,7 +392,6 @@ add Pid to the list of output ports.
 A router has an internal routing table which is a list of pairs of the form.
 \verb+[{Tag,OutPort}]+. Message sent to the input port must have
 a tag, these messages are sent to the appropriate output port.
-
 
 \begin{description}
 \item \verb+{add_route,Tag,Pid}+\\
@@ -276,15 +409,54 @@ a tag, these messages are sent to the appropriate output port.
   {\sl errors: No process associated with Tag}
   
 \end{description}
-\section{Messaging Format}
 
-All Messages are of the form: \verb+{do,Cmd,Epid}+
-If the command works it does what it is supposed to do. If it fails
-it sends a message to \verb+Epid+
+\subsection{Middle Man}
 
+A middle man translates between two different messaging formats.  It has
+two ports, call these \verb+a+ and \verb+b+.  Messages to port
+\verb+a+ are in format \verb+one+ and messages to port \verb+b+ are in
+format \verb+two+.
+
+Messages arriving at port \verb+a+ should be converted from format
+\verb+one+ to format \verb+two+ and sent to port \verb+b+ and {\sl
+  vice versa.}
+
+Here's a middle man that converts bwteen Metric and US meaasurements:
+
+\begin{verbatim}
+
+                 +-----+
+                 |     |
+      {km,3}   A |     |B  {miles,1.864}
+  ------->-------+     +------->---------    
+                 |     |
+                 +-----+
+\end{verbatim}
+
+And in the opposite direction:
+
+\begin{verbatim}
+
+                 +-----+
+                 |     |
+    {km,3.218} A |     |B  {miles,2}
+  -------<-------+     +-------<---------    
+                 |     |
+                 +-----+
+\end{verbatim}
+
+
+Examples: Convert JSON messages to XML messages, or Erlang terms.
+Convert SAX events to XML terms.
+ 
 \section{Router Code}
 
 \VerbatimInput{router.erl}
+
+The router assumes all messages are
+are of the form: \verb+{do,Cmd,Epid}+
+If the command works it does what it is supposed to do. If it fails
+it sends a message to \verb+Epid+
 
 \section{Publisher Code}
 

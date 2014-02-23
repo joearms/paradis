@@ -1,0 +1,221 @@
+\documentclass[10pt]{article}
+
+\usepackage{fancyvrb}
+%% \usepackage{hyperref}
+
+\title{Parallel and Distributed Programs\\
+Lecture F13\\
+25 February, 2014
+}
+\author{Joe Armstrong}
+
+\fvset{frame=single,numbers=left,numbersep=3pt}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+
+\section{Introduction}
+
+In this lecture we will put together some of the things we learned in
+earlier lectures.
+
+The focus of this lecture is to see how to make a bit-torrent like
+system with a client, server and tracker. Why are we studying bit
+torrent? The answer is easy. Bit torrent carries more traffic than any
+other protocol on the internet. It is the primary protocol used for
+content distribution. It's also a very good example of a parallel and
+distributed program.
+
+By the end of the course you should be able to design and program a
+bit torrent like system and adapt it to your needs.
+
+In earlier lectures we have covered:
+
+\begin{itemize}
+\item Creating a digest.
+\item Making a UDP client and server.
+\item Sending Erlang terms to UDP servers.
+\end{itemize}
+
+This is actually all we need to make a bit torrent like system, all we have
+to do is put the pieces together.
+
+\section{Bit Torrent Architecture}
+
+Bit torrent consists of a number of different programs that {\sl collaborate} to
+form a content distribution network. We need the following programs:
+
+\begin{description}
+  
+\item \verb+make_torrent <file>+\\
+Creates a torrent file. The torrent file contains
+a digest\\
+\verb+{TotLength, BlockSize, [Md5(Blocks)]}+
+
+\item \verb+start_tracker <port>+\\
+Starts a tracker listening for UDP messages on Port.
+
+\item \verb+start_client <torrent_file> <tracker_IP> <tracker_port>+\\
+Starts a client on your local machine. \verb+<torrent_file>+ is the 
+name of the torrent. \verb+tracker_ip+ and \verb+tracker_port+
+are the identity of the tracker. How the three arguments to
+\verb+start_client+ are known is not part of the system. These
+are usually obtained by an on-out-band mechanism.
+
+\end{description}
+
+\section{The Tracker and Client-Tracker Protocol}
+
+The tracker maintains a state variable which keeps track of which
+hosts are interested in which files.  The state is represented as a
+tuple of the form \verb+[{SHA,[{IP,Port,Tadd}]}]+. \verb+SHA+ is the
+SHA1 checksum of the file.  \verb+IP,Port+ is the IP address and port
+number of a machine that wants to exchange the file. \verb+Tadd+ is
+the time when the entry was added to the list. After 10 minutes the
+entry should be automatically removed from the list.
+
+The tracker can be sent one message: 
+
+\begin{description}
+\item \verb+{add_me,SHA,IP,Port}+\\
+This mean the host \verb+IP+, \verb+Port+ is interested in the file
+with hash \verb+SHA+. This should be sent once every ten minutes.
+At \verb+{IP,Port,time_now()}+ tuple is added to the list of
+hosts associated with the hash \verb+SHA+.
+
+The server responds with a UDP packet to \verb+{IP,Port}+
+containing a list of \verb+Port,IP+ machines what are interested in the 
+file.
+
+\end{description}
+
+\section{The Client - Tracker protocol}
+
+In normal operation, a client that wants to download a file does the
+following:
+
+\begin{itemize}
+\item Obtains a torrent from somewhere. This is usually
+  found on a web site, sent in an email, etc. How this 
+is distributed is not part of the bit torrent protocol.
+
+\item Finds the IP address and port number of a tracker.
+  Again how this is done is not part of the bit torrent protocol.
+
+\item Opens a UDP listening port at (\verb+IP+, \verb+Port+) and sends a\\
+  \verb+{add_me, SHA, IP, Port}+ message to the tracker.
+
+\item Waits for a response from the tracker. The tracker will hopefully
+send back a list of machines.
+
+\item Contacts the client and starts the file exchange protocol.
+\end{itemize}
+
+\section{The Client - Client Protocol}
+
+Once a client has a list of \verb+IP+, \verb+Port+ pairs associated with a
+hash \verb+H+ it can get get to work.
+
+There are only a few messages in the Client-Client Protocol:
+
+\begin{description}
+\item \verb+{ihave1,SHA1,B1}+\\
+\verb+B1+ is a bitmap of the blocks that I have.
+\verb+SHA1+ is a SHA1 checksum of the torrent file.
+the units of the bitmap are in MB blocks.
+
+Since we are using UDP we won't want to send very large packets.
+Assume we want to send a 1GB file. This is 1000 blocks of 1MB
+which can be represented in a bitmap of 125 bytes. 
+1GB is 1 million 1K Blocks which could be represented in a
+125KByte bitmap - but this is too big for a UDP packet, so we use MB units
+in the bitmap.
+
+Our strategy is to first agree on which 1 MB blocks we want to
+transfer then on which KB blocks we want to exchange.
+
+\item \verb+{ihave2,SHA1,K,B}+\\
+This is similar to the previous message but now it is talking about
+block \verb+K+. Block \verb+K+ is the \verb+K+'th MB block in the file.
+\verb+B+ is a bit map of the KB data that I have in this block.
+
+\item \verb+{data,SHA1,K,Min,Max,Data}+\\
+Used by a peer to send data to a peer.  
+\verb+K+ is the MB block number
+\verb+Min+ and \verb+Max+ are the \verb+Min+ and \verb+Max+ 
+are the Kbyte numbers of the data within the block.
+
+\item \verb+{iwant,SHA1,K,B}+\\
+  Means I want any of the blocks in MB block \verb+K+ that have a
+  1 bit set in the bitmap B.
+
+\end{description}
+
+If we have several simultaneous connected peers keeping track of all the
+requests and of who has and who wants what is non-trivial exercise
+in concurrent programming.
+
+Note that the entire protocol assumes that clients will share data on
+collaborative basis, so some measure of trust is involved. If I send
+you data, I will want you to send me data in return. If I send you a
+lot of data and you send me little data, or data that is corrupt, then
+I will stop talking to you and stop sending you data. I might even
+send you a large number of small blocks of corrupt data and
+blacklist your IP.
+
+\section{Dimensioning}
+
+In problems like this we always have to perform some numerical estimates
+of the packet sizes involved.
+
+\begin{enumerate}
+
+\item Assume a max file size of 16GB. This is 16K x 1MByte blocks
+  so the size of the MB block bitmap is 2KBytes.
+
+  Note: Less than 576 is absolutely safest.
+  A one GB file has a 128 Byte bitmap and will be very safe.
+
+\item The size of the KB bitmap within a MB block is
+  128 bytes.
+
+\item The size of the digest is 16 bytes per block (for MD5)
+so a 1GB file will have 1024 blocks x 16 bytes = 16KB. 
+
+\end{enumerate}
+
+\section{Discussion}
+
+\begin{itemize}
+
+\item What are the block sizes in the torrent?
+\item What is the checksum algorithm (SHA1, MD5, merkle-hash-trees)?
+\item The real protocol has things like \verb+choke+ \verb+unchoke+
+etc. Why are these needed?
+\item Can we ``tune'' the size of the UDP blocks. We'd like to monitor
+  how well things were going and send larger blocks if we could.
+\item Security. Should we encrypt the P2P exchanges, or is the
+digest checksum provide sufficient security?
+\item How can we detect and ban rogue peers that try to disrupt the
+system? 
+  
+\end{itemize}
+
+\section{References}
+
+\begin{itemize}
+
+\item  https://wiki.theory.org/BitTorrentSpecification
+
+\item 
+  ``Rarest First and Choke Algorithms are Enough''
+http://arxiv.org/pdf/cs/0609026.pdf
+
+\end{itemize}
+
+\end{document}
+
+

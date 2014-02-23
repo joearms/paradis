@@ -1,0 +1,148 @@
+\documentclass[12pt]{hitec}
+
+\usepackage{fancyvrb}
+%% \usepackage{hyperref}
+
+\title{Assigments week 9}
+\author{Joe Armstrong}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+
+\section{Introduction}
+
+These problems are for lectures F12 and F13, held in week 9 of 2014.
+The problems are in two categories:
+
+\begin{itemize}
+\item {\bf normal} solve these to get {\sl Godk\"{a}nd}.
+\item {\bf advanced} solve these to get {\sl V\"{a}l Godk\"{a}nd}.
+\end{itemize}
+
+The sections and subsections in this paper are marked appropriately.
+
+\section{Parallel Maps}
+
+\verb+smap(F, L)+ (sequential map) maps a function \verb+F+ over a
+list of items \verb+L+ It is defined as follows:
+
+\begin{Verbatim}
+smap(_, [])    -> []
+smap(F, [H|T]) -> [F(H) | smap(F, T)].
+\end{Verbatim}
+
+In these exercises we will write a number of parallel mapping functions.
+
+\subsection{normal: pmap\_max(F, L, Max)}
+
+Write a function \verb+pmap_max(F, L, Max)+ that produces the same return
+value as \verb+smap(F, L)+ by evaluating up to \verb+Max+ elements of the list
+in parallel. Assume there are no exceptions raised when evaluating \verb+F+.
+
+\subsection{normal: pmap\_any(F, L)}
+
+Write a function \verb+pmap_any(F, L)+ that maps \verb+F+ over the
+list \verb+L+ in parallel but where the items in the returned list
+occur in the order they were computed.
+
+Assume that:
+
+\begin{Verbatim}
+fib(1) -> 1;
+fib(2) -> 1; 
+fib(N) -> fib(N-1) + fib(N-2).
+\end{Verbatim}
+
+Then:
+
+\begin{Verbatim}
+> pmap_any(fun fib/1, [35,2,20]).
+[1,6765,9227465]
+\end{Verbatim}
+
+Why is this? \verb+fib(2)+ is computed quickly so is first in the
+list.  \verb+fib(35)+ comes last since it takes a long time to
+compute. If we compute everything in parallel we should get the answer
+to \verb+fib(2)+ first.
+
+\subsection{normal: pmap\_any\_tagged(F, L)}
+
+This is similar to the last exercise, with the addition that the returned
+list should contain a copy of the input item that was processed. For example:
+
+\begin{Verbatim}
+> pmap_any_tagged(fun fib/1, [35,2,20]).
+[{1,1},{20,6765},{35,9227465}]
+\end{Verbatim}
+
+\subsection{normal: pmap\_any\_tagged\_max\_time(F, L, MaxTime)}
+
+This is similar to the last exercise, but with a maximum time 
+(\verb+MaxTime+) by which all
+parallel computations must terminate. \verb+MaxTime+ is a time in milliseconds.
+All on-going computations what have not terminated within time
+\verb+MaxTime+ must be killed. This means  \verb+pmap_any_tagged_max_times+
+will always return within \verb+MaxTime+ milliseconds.
+
+For example:
+
+\begin{Verbatim}
+> pmap_any_tagged_maxtime(fun fib/1, [35,2,456,20],2000).
+[{1,1},{20,6765},{35,9227465}]
+\end{Verbatim}
+
+Note that the computation of \verb+fib(456)+ takes a very long time,
+and was aborted.
+
+{\sl Aside: How long would it take to calculate fib(456) using the above program?
+Try estimating this. Can you think of a much faster way to compute fib(N)?}
+
+\subsection{advanced: pmap\_timeout(F, L, Timeout, Max)}
+
+This map function returns the elements in the list in the same order
+as the original list. The arguments should be computed in parallel. If
+a computation fails, the return value in the list should be the atom
+\verb+error+.
+
+If the the computation of an individual element takes more that
+\verb+Timeout+ milliseconds then the computation should be aborted and
+the return value in the list should be the atom \verb+timeout+.
+
+For example:
+
+\begin{Verbatim}
+> pmap_timeout(fun fib/1, [10,20,2000,abc], 2000, 3).
+[55,6765,timeout,error]
+\end{Verbatim}
+
+\subsection{advanced: pmap\_maxtime(F, L, MaxTime, Max)}
+
+This is similar to the last exercise, but in this case \verb+MaxTime+ is to
+be interpreted as the {\sl Total} time for all computations to take.
+
+\section{Components}
+
+\subsection{normal: Simple Middle Man}
+
+Write a middle man to convert between metric and US systems of
+measurement.
+
+For example if we send a term like \verb+{km, 3}+ to the 
+input port, it should send \verb+{miles,1.864}+ to the  output port.
+
+See the lecture notes for a description of the middle man component.
+
+\subsection{advanced: Components}
+
+Implement the tracker and the tracker-client protocol described
+in the lecture notes for lecture F13.
+
+Note: This problem has a rather vague specification, so you will have to
+make a number of design decisions to implement this. Document the
+design decisions you had to make and motivate your choices.
+ 
+\end{document}
+
