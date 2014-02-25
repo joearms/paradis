@@ -36,10 +36,10 @@ smap(F, [H|T]) -> [F(H) | smap(F, T)].
 
 In these exercises we will write a number of parallel mapping functions.
 
-\subsection{normal: pmap\_max(F, L, Max)}
+\subsection{normal: pmap\_max(F, L, MaxWorkers)}
 
-Write a function \verb+pmap_max(F, L, Max)+ that produces the same return
-value as \verb+smap(F, L)+ by evaluating up to \verb+Max+ elements of the list
+Write a function \verb+pmap_max(F, L, MaxWorkers)+ that produces the same return
+value as \verb+smap(F, L)+ by evaluating up to \verb+MaxWorkers+ elements of the list
 in parallel. Assume there are no exceptions raised when evaluating \verb+F+.
 
 \subsection{normal: pmap\_any(F, L)}
@@ -75,23 +75,23 @@ list should contain a copy of the input item that was processed. For example:
 
 \begin{Verbatim}
 > pmap_any_tagged(fun fib/1, [35,2,20]).
-[{1,1},{20,6765},{35,9227465}]
+[{2,1},{20,6765},{35,9227465}]
 \end{Verbatim}
 
 \subsection{normal: pmap\_any\_tagged\_max\_time(F, L, MaxTime)}
 
-This is similar to the last exercise, but with a maximum time 
-(\verb+MaxTime+) by which all
-parallel computations must terminate. \verb+MaxTime+ is a time in milliseconds.
-All on-going computations what have not terminated within time
-\verb+MaxTime+ must be killed. This means  \verb+pmap_any_tagged_max_times+
-will always return within \verb+MaxTime+ milliseconds.
+This is similar to the last exercise, but with a maximum total time
+(\verb+MaxTime+) by which all parallel computations must
+terminate. \verb+MaxTime+ is a time in milliseconds.  All on-going
+computations what have not terminated within time \verb+MaxTime+ must
+be killed. This means \verb+pmap_any_tagged_max_times+ will always
+return within \verb+MaxTime+ milliseconds.
 
 For example:
 
 \begin{Verbatim}
 > pmap_any_tagged_maxtime(fun fib/1, [35,2,456,20],2000).
-[{1,1},{20,6765},{35,9227465}]
+[{2,1},{20,6765},{35,9227465}]
 \end{Verbatim}
 
 Note that the computation of \verb+fib(456)+ takes a very long time,
@@ -100,7 +100,7 @@ and was aborted.
 {\sl Aside: How long would it take to calculate fib(456) using the above program?
 Try estimating this. Can you think of a much faster way to compute fib(N)?}
 
-\subsection{advanced: pmap\_timeout(F, L, Timeout, Max)}
+\subsection{advanced: pmap\_timeout(F, L, Timeout, MaxWorkers)}
 
 This map function returns the elements in the list in the same order
 as the original list. The arguments should be computed in parallel. If
@@ -111,6 +111,8 @@ If the the computation of an individual element takes more that
 \verb+Timeout+ milliseconds then the computation should be aborted and
 the return value in the list should be the atom \verb+timeout+.
 
+No more than at most \verb+MaxWorkers+ processes should run in parallel.
+
 For example:
 
 \begin{Verbatim}
@@ -118,7 +120,13 @@ For example:
 [55,6765,timeout,error]
 \end{Verbatim}
 
-\subsection{advanced: pmap\_maxtime(F, L, MaxTime, Max)}
+The above call means ``compute \verb+fib(I)+ for the elements \verb+I+
+in the list \verb+[10,20,200,abc]+. Return \verb+timeout+ if the
+computation of \verb+fib(I)+ takes more than 2 seconds, \verb+error+
+if the computation of \verb+fib(I)+ fails and allow no more than 3
+computations of \verb+fib(I)+ to run in parallel.''
+
+\subsection{advanced: pmap\_maxtime(F, L, MaxTime, MaxWorkers)}
 
 This is similar to the last exercise, but in this case \verb+MaxTime+ is to
 be interpreted as the {\sl Total} time for all computations to take.
