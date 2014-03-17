@@ -1,5 +1,14 @@
 -module(maps).
--export([pmap/2, smap/2]).
+-export([fib/1, pmap/2, smap/2]).
+
+fib(1) ->
+    1;
+fib(2) ->
+    1;
+fib(N) ->
+    fib(N-1) + fib(N-2).
+
+
 
 smap(F, L) -> [F(I) || I <- L].
 

@@ -1,0 +1,548 @@
+\documentclass[10pt]{article}
+
+\usepackage{fancyvrb}
+%% \usepackage{hyperref}
+
+\title{Parallel and Distributed Programs\\
+Lecture F20\\
+18 March, 2014
+}
+\author{Joe Armstrong}
+
+\fvset{frame=single,numbers=left,numbersep=3pt}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+
+\section{Introduction}
+
+In this lecture we put togther the things learned in earlier lectures.
+
+A rough plan is as follows:
+
+\begin{itemize}
+\item Review the UDP client server.
+\item Run a UDP client - server test.
+\item Look at the tracker code
+\item Run a TCP client - server test.
+\item Make a simple client-server TCP framework.
+\item Add secutity and authentication to the TCP server
+\end{itemize}
+
+\section{UDP test}
+
+Recall the UDP program:
+
+\begin{Verbatim}
+-module(udp_test).
+-export([start_server/0, fac/3, fac/1]).
+
+start_server() ->
+    spawn(fun() -> server(4000) end).
+
+%% The server             
+server(Port) ->
+    {ok, Socket} = gen_udp:open(Port, [binary]),
+    io:format("server on ~p opened socket:~p~n",[my_ip(), Socket]),
+    loop(Socket).
+
+loop(Socket) ->
+    receive
+        {udp, Socket, Host, Port, Bin} = Msg ->
+            {ok, Peer} = inet:peername(Socket),
+            io:format("server received:~p from ~p~n",[Msg, Peer]),
+            N = binary_to_term(Bin),
+            Fac = factorial(N),
+            gen_udp:send(Socket, Host, Port, term_to_binary(Fac)),
+            loop(Socket)
+    end.
+    
+%% The client
+fac(N) ->
+    fac("localhost", 4000, N).
+
+fac(Host, Port, N) ->
+    {ok, Socket} = gen_udp:open(0, [binary]),
+    io:format("client opened socket=~p~n",[Socket]),
+    ok = gen_udp:send(Socket, Host, Port, term_to_binary(N)),
+    Value = receive
+		{udp, Socket, _, _, Bin} = Msg ->
+		    io:format("client received:~p~n",[Msg]),
+		    binary_to_term(Bin)
+	    after 2000 ->
+		    0
+	    end,
+    gen_udp:close(Socket),
+    Value.
+
+my_ip() ->
+    case inet:ifget("eth0",[addr]) of
+        {ok,[{addr,IP}]} ->
+            IP;
+        _ ->
+            exit(cannot_find_local_ip)
+    end.
+\end{Verbatim}
+
+\section{Testing we can talk to each other}
+
+Assume we have two computers in the lecture theatre with IP addresses IP1
+and IP2 - can they send UDP packets to each other?
+
+There's a simple test to see if this works
+
+The code is at:
+
+\verb+https://github.com/joearms/paradis/blob/master/udp_test.erl+
+
+If we take two machines in the lecture theater, assume that machine one has
+IP address 202.34.123.24 and the second has 202.34.123.33
+
+On machine one (with IP 202.34.123.24)
+
+\begin{verbatim}
+   $ erl
+   > udp_test:start_server()
+\end{verbatim}
+
+One machine two (with IP 202.34.123.33)
+
+\begin{verbatim}
+   $ erl
+   > udp_test:fac("202.34.123.24", 4000).
+\end{verbatim}
+
+\section{The Torrent Tracker}
+
+\begin{Verbatim}
+-module(tracker_server).
+%%-compile(export_all).
+
+-export([start/0]).
+
+%% this runs as registered
+%% process
+
+start() ->
+    start(1500).
+
+start(Port) ->
+    register(tracker, spawn(fun() -> server(Port) end)).
+
+%% The server             
+
+server(Port) ->
+    process_flag(trap_exit, true),
+    S = self(),
+    spawn_link(fun() -> ping_me(S) end),
+    {ok, Socket} = gen_udp:open(Port, [binary]),
+    IP = erl_torrent_lib:my_ip(),
+    io:format("tracker on ~p listening for UDP packets on port ~p~n",
+              [IP, Port]),
+    loop(Socket, []).
+
+ping_me(Pid) ->
+    receive
+        after 10000 ->
+                Pid ! ping
+        end,
+    ping_me(Pid).
+
+loop(Socket, Store) ->
+    receive
+        {udp, Socket, IP, Port, Bin} = Z ->
+            io:format("server received:~p~n",[Z]),
+            case erl_torrent_lib:decode(Bin) of
+                {register,SHA} ->
+                    Store1 = do_register(SHA, IP, Port, Store),
+                    tell_peers(Socket, SHA, Store1),
+                    loop(Socket, Store1);
+                error ->
+                    io:format("Dropping packet~n"),
+                    loop(Socket, Store)
+            end;
+        ping ->
+            Store1 = remove_stale_items(Store),
+            io:format("~w ",[length(Store1)]),
+            loop(Socket, Store1);
+        Other ->
+            io:format("Unexpected:~p~n",[Other]),
+            loop(Socket, Store)
+    end.
+
+do_register(SHA, IP, Port, Store) ->
+    io:format("Register: ~p~n",[{SHA, IP, Port}]),
+    Now = erl_torrent_lib:timestamp(),
+    [{SHA,IP,Port,Now}|Store].
+
+
+tell_peers(Socket, SHA, Store) ->
+    L = [ {IP,Port} || {SHA1,IP,Port,_} <- Store, SHA1 == SHA ],
+    Packet = erl_torrent_lib:encode({registered,SHA,L}),
+    io:format("Broadcast to:~p~npacket(~w):~p~n",[L,size(Packet), Packet]),
+    broadcast(Socket, L, Packet).
+
+broadcast(Socket, L, Packet) ->
+    [gen_udp:send(Socket, IP, Port, Packet) || {IP, Port} <- L].
+
+remove_stale_items(L) ->
+    Now = erl_torrent_lib:timestamp(),
+    remove_stale_items(L, Now).
+
+remove_stale_items([{_,_,_,Time}=H|T], Now) ->
+    HowLong = Now - Time,
+    if
+        HowLong > 20 ->
+            %% been there greater than 20 seconds
+            io:format("Removing:~p~n",[H]),
+            remove_stale_items(T, Now);
+        true ->
+            [H|remove_stale_items(T, Now)]
+    end;
+remove_stale_items([], _) ->
+    [].
+
+\end{Verbatim}
+
+
+\section{TCP client-server framework}
+
+A parallel TCP server looks something like this:\footnote{Page 268 and
+  271 of Programming Erlang}
+
+\begin{verbatim}
+start_parallel_server() ->
+   {ok, Listen} = gen_tcp:listen(Port,
+                                 [binary,{packet,4},
+                                  {reuseadrr,true},
+                                  {active,true}]),
+   spawn(fun() -> par_connect(Listen) end).
+
+par_connect(Listen) ->
+   {ok, Socket} = get_tcp:accept(Listen),
+   spawn(fun() -> par_connect(Listen) end),
+   loop(Socket)
+\end{verbatim}
+
+We can modify this basic pattern as follows:
+
+\begin{verbatim}
+start_parallel_server(Port, Fun) ->
+    {ok, Listen} = case gen_tcp:listen(Port,
+                     [binary,{packet,4},{reuseaddr,true},{active,true}]),
+    spawn(fun() ->  par_connect(Listen, Fun) end).
+
+
+par_connect(Listen, Fun) ->
+    {ok, Socket} = gen_tcp:accept(Listen),
+    spawn(fun() ->  par_connect(Listen, Fun) end),
+    {Pid, _} = spawn_monitor(fun() -> Fun(S, Erl) end),
+    middle_man(Pid, Socket).
+\end{verbatim}
+
+The {\sl middle man} converts between Erlang terms and binaries:
+
+\begin{verbatim}
+middle_man(Pid, Socket) ->
+    receive
+        {tcp, Socket, Bin} ->
+            Term = binary_to_term(Bin),
+            Pid ! {self(), message, Term},
+            middle_man(Pid, Socket);
+        {tcp_closed, Socket} ->
+            Pid ! {self(), closed};
+        close ->
+            gen_tcp:close(Socket);
+        {message, Term}->
+            Bin = term_to_binary(Term),
+            gen_tcp:send(Socket, Bin),
+            middle_man(Pid, Socket)
+    end.
+\end{verbatim}
+
+The \verb+loop(Socket)+ function can be ``tweaked'' a bit using the 
+``middle man'' pattern:
+
+\begin{verbatim}
+middle_man(Pid, Socket) ->
+    receive
+        {tcp, Socket, Bin} ->
+            Term = binary_to_term(Bin),
+            Pid ! {self(), message, Term},
+            middle_man(Pid, Socket);
+        {tcp_closed, Socket} ->
+            Pid ! {self(), closed};
+        close ->
+            gen_tcp:close(Socket);
+        {message, Term}->
+            Bin = term_to_binary(Term),
+            gen_tcp:send(Socket, Bin),
+            middle_man(Pid, Socket);
+        X ->
+            io:format("MM :: Unexpected message dropped:~p~n",[X]),
+            middle_man(Pid, Socket)
+    end.
+\end{verbatim}
+
+This code is bundled into \verb+simple_client_server.erl+
+
+Now we can build a client and a server using the framework:
+
+\subsection{Server1}
+
+First the server:
+
+\begin{Verbatim}
+-module(server1).
+-export([start/0]).
+
+start() ->
+    register(?MODULE, spawn(fun start_server1/0)).
+
+start_server1() ->
+    simple_client_server:
+       start_server(5123, fun connection_attempt/3).
+
+connection_attempt(Pid, Peer, Init) ->
+    io:format("Connection from:~p Init:~p~n",[Peer, Init]),
+    Pid ! accept, %% or reject
+    server_loop(Pid).
+
+server_loop(Pid) ->
+    receive
+        {Pid, message, {echo, R}=Msg} ->
+            io:format("Server1 :: received:~p~n",[Msg]),
+            io:format("Server1 :: sending reply:~p~n",[Msg]),
+            Pid ! {message, {echoed, R}},
+            server_loop(Pid);
+        {Pid, closed} ->            
+            io:format("Server1 :: client has closed the connection~n",[]);
+        Other ->
+            io:format("Server1 :: Unexpected message:~p~n",[Other]),
+            server_loop(Pid)
+    end.
+\end{Verbatim}
+
+\subsection{Client1}
+\begin{Verbatim}
+-module(client1).
+-export([test/0]).
+
+test() ->
+    {ok, Pid} = simple_client_server:connect_to_server("localhost", 5123, hello_joe), 
+    Msg = {echo, hello},
+    io:format("Client1 :: sending:~p to server~n",[Msg]),
+    Pid ! {message, Msg},
+    receive
+        {Pid, message, X} ->
+            io:format("Client1 :: Server responded :: ~p~n",[X])
+    end,
+    Pid ! close,
+    io:format("Client1 :: test completed~n").
+\end{Verbatim}
+
+\subsection{Server2}
+\begin{Verbatim}
+-module(server2).
+-export([start/0]).
+
+.. same as server1 ...
+
+server_loop(Pid) ->
+    receive
+        {Pid, message, {rpc, R}} ->
+            io:format("Server2 :: command:~p~n",[R]),
+            Reply = do(R),
+            io:format("Server1 :: sending reply:~p~n",[Reply]),
+            Pid ! {message, Reply},
+            server_loop(Pid);
+        {Pid, closed} ->            
+            io:format("Server2 :: client has closed the connection~n",[]);
+        Other ->
+            io:format("Server2 :: Unexpected message:~p~n",[Other]),
+            server_loop(Pid)
+    end.
+
+do({fac,N}) -> fac(N).
+...
+\end{Verbatim}
+
+
+\subsection{Client2}
+\begin{Verbatim}
+-module(client2).
+-export([test/0]).
+
+test() ->
+    {ok, Pid} = simple_client_server:connect_to_server("localhost", 5123, hello_joe), 
+    Val = rpc(Pid, {fac,50}),
+    io:format("Fac(50) = ~p~n",[Val]),
+    Pid ! close,
+    io:format("Client2 :: test completed~n").
+
+rpc(Pid, Query) ->
+    Msg = {rpc, Query},
+    io:format("Client2 :: sending:~p to server~n",[Msg]),
+    Pid ! {message, Msg},
+    receive
+	{Pid, message, X} ->
+	    io:format("Client2 :: Server responded :: ~p~n",[X]),
+	    X
+    end.
+\end{Verbatim}
+
+\subsection{Server3}
+
+\begin{Verbatim}
+-module(server3).
+
+... as for server1 ...
+
+do({ls,Wildcard})   -> filelib:wildcard(Wildcard);
+do({get_file,File}) -> file:read_file(File);
+...
+\end{Verbatim}
+
+\subsection{Client3}
+
+\begin{Verbatim}
+-module(client3).
+-export([test/0]).
+
+-import(simple_client_server, [rpc/2, connect_to_server/3]).
+
+test() ->
+    {ok, Pid} = connect_to_server("localhost", 5123, hello_joe), 
+    Val = rpc(Pid, {fac,50}),
+    io:format("Fac(50) = ~p~n",[Val]),
+    Files = rpc(Pid, {ls,"*.erl"}),
+    io:format("Files=~p~n",[Files]),
+    Data = rpc(Pid, {get_file, "server3.erl"}),
+    io:format("server3.erl = ~p~n",[Data]),
+    Pid ! close,
+    io:format("Client3 :: test completed~n").
+\end{Verbatim}
+
+Now it's time to add some security:
+
+\section{RSA}
+
+This section illustrates the principles behind public key cryptography,
+I will start with a few definitions and then a simple example.
+
+    Definitions:   The RSA public keys  system   is characterized by two
+two-tuples of integers  \verb+{N, A}+ and  \verb+{N, B}+  one tuple is
+called the public key and may be openly published in a catalogue, the
+other is called a private key and is kept secret.
+
+    To encrypt the message \verb+M+ with  the public key \verb+{N, A}+
+we compute  $E = M^{A} mod N$ ($E$  is now  the  encrypted
+message), to decrypt the message  we compute  $E^{B} mod N$  which
+gets you back to where you started.
+
+    Example: (from the Erlang) shell
+
+\begin{verbatim}
+1 > A = 117298167.
+117298167.
+2 > B = 412261863.
+412261863
+3 > N = 2315306317.
+2315306317
+4 > M = "cat".              
+"cat"
+5 > I = lin:str2int(M).
+6513012
+6 > E = lin:pow(I, A, N).
+337586
+7 > D = lin:pow(E, B, N).
+6513012
+8 > lin:int2str(D).
+"cat"
+\end{verbatim}
+
+In lines 1-3 we define the variables used in the 
+public key \verb+{A, N}+ and the private
+key \verb+{B, N}+. The secret message "cat" is encoded into an integer
+(lines 4-5), line 6 encodes the message, line 7 decodes the message
+and line 8 decodes it.
+
+    All that remains is to  figure out how  to compute suitable values
+for the public and private keys.
+
+    The "book [Cryptography, Theory and  Practice, Douglas R. Stinson,
+CRC Press, 1995]" says ...
+
+\begin{enumerate} 
+\item  Bob generates two large primes $p$ and $q$.
+\item  Bob computes $n = pq$ and $phi(n) = (p-1)*(q-1)$.
+\item  Bob chooses a random $b(0 < b < phi(n))$ such that
+$gcd(b, phi(n)) = 1$.
+\item  Bob computes $a = b^{-1} mod \: phi(n)$ using the Euclidean algorithm.
+\item Bob publishes $n$ and  $b$ in a directory as his public key.
+\end{enumerate}
+
+The implementation follows in a straightforward manner from the
+specification:
+
+\begin{verbatim}
+make_sig(Len) ->
+    %% generate two <Len> digit prime numbers
+    P = primes:make_prime(Len),
+    io:format("P = ~p~n", [P]),
+    Q = primes:make_prime(Len),
+    io:format("Q = ~p~n", [Q]),
+    N = P*Q,
+    io:format("N = ~p~n", [N]),
+    Phi = (P-1)*(Q-1),
+    %% now make B such that B < Phi and gcd(B, Phi) = 1
+    B = b(Phi),
+    io:format("Public key (B) = ~p~n", [B]),
+    A = lin:inv(B, Phi),
+    io:format("Private key (A) = ~p~n", [A]),
+    {{B,N},{A,N}}.
+
+b(Phi) ->
+    io:format("Generating a public key B "),
+    K = length(integer_to_list(Phi)) - 1,
+    B = b(1, K, Phi),
+    io:format("~n", []),
+    B.
+
+b(Try, K, Phi) ->
+    io:format("."),
+    B = primes:make(K),
+    if 
+        B < Phi ->
+            case lin:gcd(B, Phi) of
+                1 -> B;
+                _ -> b(Try+1, K, Phi)
+            end;
+        true ->
+            b(Try, K, Phi)
+    end.
+\end{verbatim}
+
+\begin{verbatim}
+> rsa_key:make_sig(20). 
+Generating a 20 digit prime .....................
+P = 73901624116374075313
+Generating a 20 digit prime ....................
+Q = 78532450632904297229
+N = 5803675647610596726269859097648983207677
+Generating a public key B ...
+Public key (B) = 761323469064175805955496463001193982357
+Private key (A) = 3282348550950508596270008789422146776573
+{{761323469064175805955496463001193982357,
+  5803675647610596726269859097648983207677},
+ {3282348550950508596270008789422146776573,
+  5803675647610596726269859097648983207677}}
+\end{verbatim}
+
+
+\end{document}
+
+
