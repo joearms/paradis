@@ -13,10 +13,11 @@ start_server(Port, Fun) ->
 	  end).
 
 init_server(Port, Fun) ->
+    io:format("init_server:~p ~p~n",[Port, Fun]),
     case gen_tcp:listen(Port,
 			[binary,{packet,4},{reuseaddr,true},{active,true}]) of
 	{ok, Listen} ->
-	    IP = my_ip(),
+	    IP = (catch my_ip()),
 	    io:format("~p listening on port:~p~n",[IP, Port]),
 	    spawn(fun() ->  par_connect(Listen, Fun) end);
 	Error ->
@@ -102,11 +103,12 @@ connect_to_server(Parent, Host, Port, Init) ->
     end.
 	    
 my_ip() ->
-    case inet:ifget("eth0",[addr]) of
+    %% case inet:ifget("eth0",[addr]) of
+    case inet:ifget("en1",[addr]) of
         {ok,[{addr,IP}]} ->
             IP;
         _ ->
-            exit(cannot_find_local_ip)
+            cannot_find_local_ip
     end.
 
 rpc(Pid, Query) ->

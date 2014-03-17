@@ -16,7 +16,7 @@ loop(Socket) ->
 	    {ok, Peer} = inet:peername(Socket),
 	    io:format("server received:~p from ~p~n",[Msg, Peer]),
 	    N = binary_to_term(Bin),
-	    Fac = factorial(N),
+	    Fac = fac(N),
 	    gen_udp:send(Socket, Host, Port, term_to_binary(Fac)),
 	    loop(Socket)
     end.
