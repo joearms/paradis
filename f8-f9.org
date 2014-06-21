@@ -94,7 +94,7 @@ file_to_term(File) ->
 
 #+BEGIN_erlang
 consult(F) ->
-    {ok, [L]} = file:consult(F),
+    {ok, L} = file:consult(F),
     L.
 
 unconsult(File, Term) ->
