@@ -3,7 +3,7 @@
 \usepackage{fancyvrb}
 %%\usepackage{hyperref}
 
-\title{Assigments week 4}
+\title{Problem set 1}
 \author{Joe Armstrong}
 
 \begin{document}
@@ -14,9 +14,7 @@
 
 \section{Introduction}
 
-These problems are for lectures F2 and F3 held in week 4 of 2014.  The
-completed assignments should be submitting to our ilearn2-server.
-{\sl before} lecture F5.
+These problems are for lectures E1 and E2.
 
 Additional material can be found in Chapters 1..6 of
 the course book {\sl Programming Erlang, 2'nd edition}. 
@@ -30,31 +28,32 @@ Here's what you have to do:
 \begin{enumerate}
 \item Make sure Erlang runs on your machine.
 
-\item Download the file \verb+week4_problems.erl+ from my github repository
-  \verb+http://joearms.github.com/paradis/src/week4_problems.erl+.
+\item Download the file \verb+problems1.erl+ from my github repository
+\newline
+  \verb+http://joearms.github.com/paradis1/src/problems1.erl+.
 
-\item Implement the module \verb+week4_solutions.erl+ (and any modules
-that \verb+week4_solutions+ calls).
+\item Implement the module \verb+solutions1.erl+ (and any modules
+that \verb+solutions1+ calls).
 
-\item Compile \verb+week4_problems.erl+, \verb+week4_solutions.erl+ and
+\item Compile \verb+problems1.erl+, \verb+solutions1.erl+ and
 any other code you need.
 
-\item Evaluate the function \verb+week4_problems:test_easy()+. If this
+\item Evaluate the function \verb+problems1:test_easy()+. If this
   evaluates to \verb+horray+ your program has passed
   its unit test and will be graded as {\sl Godk\"{a}nd}.
 
 \item To get {\sl V\"{a}l Godk\"{a}nd} you should also pass the tests
-  in the function \verb+week4_problems:test_hard()+.
+  in the function \verb+problems1:test_hard()+.
 
 \end{enumerate}
 
 \section{Problems}
 
-All your code should be in the module \verb+week4_solutions.erl+ it
+All your code should be in the module \verb+solutions.erl+ it
 should export the functions \verb+factorial/1+, \verb+rotate/2+ etc.
 (The notation \verb+F/N+ means the function \verb+F+ with \verb+N+
 arguments).  The functions that you have to implement are those which
-are called from \verb+week4_problems.erl+. Each function is described
+are called from \verb+problems1.erl+. Each function is described
 in a separate subsection below:
 
 \subsection{factorial(N)}
@@ -67,12 +66,12 @@ For example \verb+factorial(5) = 5 * 4 * 3 * 2 * 1+ which is
 \verb+120+
 
 Note: As you can see, the test function in 
-\verb+week4_solutions.erl+\footnote{The listing is at the end of this document.} 
+\verb+solutions.erl+\footnote{The listing is at the end of this document.} 
 starts:
 
 \begin{Verbatim}[frame=single]
 test() ->
-    120 = week4_solutions:factorial(5),
+    120 = solutions:factorial(5),
     ...
 \end{Verbatim}
 
@@ -99,7 +98,7 @@ so  \verb+rotate(-1, [a,b,c,d,e,f])+ is the list
 
 Returns the number of Erlang atoms \verb+X+ in the data structure \verb+X+.
 
-In the test case we parse the program \verb+week4_problems.erl+.  The
+In the test case we parse the program \verb+problems1.erl+.  The
 module \verb+epp+ exports \verb+parse_file+ which returns the parse
 tree of the program. The parse tree is dumped into the file
 \verb+debug+ so you can see what it looks like. The first time you run
@@ -151,13 +150,13 @@ Here's what it looks like if everything goes right:
 $ erl
 Erlang R16B (erts-5.10.1) ...
 Eshell V5.10.1  (abort with ^G) ...
-1> c(week4_problems).
-{ok,week4_problems}
-2> c(week4_solutions).
-{ok,week4_solutions}
-3> week4_problems:test_east().
+1> c(problems1).
+{ok,problems1}
+2> c(solutions).
+{ok,solutions}
+3> problems1:test_east().
 horray
-4> week4_problems:test_east().
+4> problems1:test_east().
 written:"debug"
 whoopy
 \end{Verbatim}
@@ -168,7 +167,7 @@ whoopy
 
 \item Print small data structures in the shell with \verb+io:format("~p", [X])+.
 
-\item Use \verb+week4_problems:dump/2+ to pretty print large data structures.
+\item Use \verb+problems1:dump/2+ to pretty print large data structures.
 
 \item Make sure all your Erlang programs are in the same directory.
 If you code is in different directories you might run into problems with code paths.
@@ -180,7 +179,7 @@ If you code is in different directories you might run into problems with code pa
 
 \section{The test program}
 
-\VerbatimInput[frame=single]{week4_problems.erl}
+\VerbatimInput[frame=single]{problems1.erl}
 
 
 \end{document}
