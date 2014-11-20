@@ -1,0 +1,43 @@
+.SUFFIXES: .erl .beam .yrl
+
+MODS := $(wildcard *.erl)
+LECTURES := $(wildcard *.org)
+PROBLEMS := $(wildcard problems_*.tex)
+
+ERLC     = @echo "  ERLC\t$@"; @ERLC@
+
+%.beam: %.erl
+	$(ERLC) -W $<
+
+lecture_%.pdf: %.org
+	./make_slides $<
+
+problems_%.pdf: problems_%.tex
+	@PDFLATEX@ $<
+	@PDFLATEX@ $<
+
+all: beams lectures problems
+
+missing:
+	@GLURK@ bother
+lectures: ${LECTURES:%.org=lecture_%.pdf}
+
+problems: ${PROBLEMS:%.tex=%.pdf}
+
+
+week4_problems.pdf: week4_problems.tex
+	pdflatex week4_problems.tex
+	pdflatex week4_problems.tex
+
+beams: ${MODS:%.erl=%.beam}
+
+clean:
+	rm -rf lecture_*.tex *.aux *.log *.toc *.out
+	rm -rf erl_crash.dump *.beam
+
+very_clean:
+	rm -rf *.pdf 
+
+
+
+

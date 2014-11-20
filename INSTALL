@@ -1,0 +1,14 @@
+Any Posix system
+
+All you need to check in is
+
+   configure.ac
+   Makefile.in
+
+1) autoconf
+
+Make configure
+   
+2) ./configure
+
+makes Makefile for Makefile.in
