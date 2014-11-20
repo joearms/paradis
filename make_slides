@@ -1,6 +1,9 @@
 #!/bin/sh
 
 erl -pa '.' -s orgmode_parse transform $1 -s init stop
-pdflatex $1.tex
-pdflatex $1.tex
+out=`basename $1 .org`
+file="lecture_${out}.tex"
+echo "output=${file}"
+pdflatex $file
+pdflatex $file
 

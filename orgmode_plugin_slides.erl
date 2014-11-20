@@ -5,12 +5,12 @@
 -import(lists, [reverse/1]).
 
 process(File, A0, Blocks) ->
-    %% Root = filename:rootname(File),
+    Root = filename:rootname(File),
     Blocks1 = [pass1(I) || I <- Blocks],
     L = render(Blocks1, [], []),
     %% elib2_misc:dump("parsed.tmp", L),
     A = [{"slides", L}|A0],
-    Out = File ++ ".tex",
+    Out = "lecture_" ++ Root ++ ".tex",
     elib2_misc:expand_file_template("slides.template", A, Out),
     io:format("Created:~s~n",[Out]).
 

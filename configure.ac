@@ -1,6 +1,5 @@
 AC_PREREQ([2.68])
-AC_INIT([paradis], , [], [],
- [ssh://gerritforge.lmera.ericsson.se:29418/erlang-ecim-oam-moci])
+AC_INIT([paradis], , [], [], [https://github.com/joearms/paradis])
 
 # Checks for programs.
 AC_PROG_MAKE_SET
