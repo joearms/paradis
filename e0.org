@@ -11,7 +11,7 @@ process: orgmode_plugin_slides
 
 * About
 
-** Assignments and other material are at \url{https://github.com/joearms/paradis1}
+** Assignments and other material are at \url{https://github.com/joearms/paradis}
 ** It's a GIT repository. Please push changes to me. {\sl help me improve the course better}.
    
 * Schedule
@@ -29,7 +29,7 @@ process: orgmode_plugin_slides
 ** Problems \#1
 * Week49 E3 - E4
 ** Binaries
-** the awesomeness of the Bit styntax
+** the awesomeness of the Bit syntax
 ** The awesomeness of Term to Binary
 ** BIFS
 ** Types
@@ -63,9 +63,9 @@ process: orgmode_plugin_slides
 ** Problems \#6
 
 * Help me improve the course
-** We start with a emacs org-mode, this file is \verb+f0.org+.
-** An Erlang program \verb+orgmode_parse.erl+ transforms it into \verb+f0.org.tex+. This adds color coding of code and a few other nice things.
-** Run \verb+pdflatex+ twice and get \verb+e0.org.pdf+.
+** We start with a emacs org-mode, this file is \verb+e0.org+.
+** An Erlang program \verb+orgmode_parse.erl+ transforms it into \verb+lecture_e0.tex+. This adds color coding of code and a few other nice things.
+** Run \verb+pdflatex+ twice and get \verb+lecture_e0.pdf+.
 ** This system was written last week and is possibly buggy.
 ** Please help me improve the material. Push all changes to github.
 ** There are no course credits for helping.
