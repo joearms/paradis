@@ -1,0 +1,168 @@
+#+STARTUP: overview, hideblocks
+#+BEGIN_kv
+title: Databases + OTP
+subtitle: Lecture E10 (Chapters 22)
+author: Joe Armstrong
+copyright: \copyright 2014 -- Joe Armstrong
+email: joe.armstrong@ericsson.com, joearms@gmail.com
+affiliation: Ericsson AB
+process: orgmode_plugin_slides
+#+END_kv
+* The road to the gen server - Chapter 22
+** The most important chapter in the book
+** Read this many times
+
+* The Road to the gen server
+** Write a client-server all in one module.
+** Split the code into two modules. One with only sequential code, the other with concurrency primitives.
+* counter0 - in one module
+
+#+BEGIN_erlang
+-module(counter0).
+-export([start/0, loop/1, tick/1, read/0, clear/0]).
+
+start() -> 
+   register(counter0, spawn(counter0, loop, [0])).
+
+tick(N)  -> rpc({tick, N}).
+read()   -> rpc(read).
+clear()  -> rpc(clear).
+
+loop(State) ->
+   receive
+       {From, Tag, {tick, N}} ->
+	   From ! {Tag, ack},
+	   loop(State + N);
+       {From, Tag, read} ->
+	   From ! {Tag, State},
+	   loop(State);
+       {From, Tag, clear} ->
+	   From ! {Tag, ok},
+	   loop(0)
+   end.
+#+END_erlang
+
+* counter0 (continued)
+
+#+BEGIN_erlang
+rpc(Query) ->
+    Tag = make_ref(),
+    counter0 ! {self(), Tag, Query},
+    receive
+       {Tag, Reply} ->
+          Reply
+    end.
+#+END_erlang
+
+#+BEGIN_shell
+$ erl
+1> counter0:start().
+true
+2> counter0:tick(5).
+ack
+3> counter0:tick(10).
+ack
+4> counter0:read(). 
+15
+#+END_shell
+
+* Reorganize counter0 into two files
+
+** The server:
+
+#+BEGIN_erlang
+-module(gen_server_lite).
+-export([start/2, loop/2, rpc/2]).
+
+start(Mod, State) -> 
+   register(Mod, spawn(gen_server_lite, loop, [Mod, State])).
+
+loop(Mod, State) ->
+   receive
+      {From, Tag, Query} ->
+          {Reply, State1} = Mod:handle(Query, State),
+	  From ! {Tag, Reply},
+          loop(Mod, State1)
+       end.
+
+rpc(Mod, Query) ->
+    Tag = make_ref(),
+    Mod ! {self(), Tag, Query},
+    receive
+       {Tag, Reply} ->
+          Reply
+    end.
+#+END_erlang
+   
+* ... and  the client
+#+BEGIN_erlang
+-module(counter1).
+-compile(export_all).
+
+start() -> gen_server_lite:start(counter, 0).
+
+tick(N)  -> gen_server_lite:rpc(counter, {tick, N}).
+read()   -> gen_server_lite:rpc(counter, read).
+clear()  -> gen_server_lite:rpc(counter, clear).
+
+handle({tick,N}, State) -> {ack, State+N};
+handle(read, State)     -> {State, State};
+handle(clear,_)         -> {ok, 0}.
+#+END_erlang
+
+* Running the program
+#+BEGIN_shell
+1> counter1:start().
+true
+2> counter1:read().
+0
+3> counter1:tick(10).
+ack
+4> counter1:tick(14).
+ack
+5> counter1:read().  
+24
+6> counter1:clear(). 
+ok
+7> counter1:read(). 
+0
+8> counter1:read().
+#+END_shell             
+
+* Abstracting out concurrency
+
+** counter.erl has no send receive spawn etc.
+** {\sl Everything to do with concurrency is in} \verb+gen_server_lite.erl+
+
+* The real gen\_server
+#+BEGIN_erlang
+-module(counter2).
+-export([start/0, init/1, tick/1, read/0, clear/0, handle_call/3]).
+%% the real gen_server
+
+start() -> gen_server:start_link({local,counter2}, counter2, 0, []).
+
+init(N) -> {ok, N}.
+
+tick(N)  -> gen_server:call(counter2, {tick, N}).
+read()   -> gen_server:call(counter2, read).
+clear()  -> gen_server:call(counter2, clear).
+
+handle_call({tick,N}, _From, M)   -> {reply, ack, M+N};
+handle_call(read, _From, N)       -> {reply, N, N};
+handle_call(clear,_From, _State)  -> {reply, ok, 0}.
+#+END_erlang
+
+* OTP behaviours
+
+** gen\_server -- client server model.
+** gen\_fsm -- finite state machine.
+** supervisor.
+
+
+
+
+
+
+
+

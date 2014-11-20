@@ -1,0 +1,124 @@
+#+STARTUP: overview, hideblocks
+#+BEGIN_kv
+title: Sequential Erlang 
+subtitle: Lecture E11 (Chapters 23..24)
+author: Joe Armstrong
+copyright: \copyright 2014 -- Joe Armstrong
+email: joe.armstrong@ericsson.com, joearms@gmail.com
+affiliation: Ericsson AB
+process: orgmode_plugin_slides
+#+END_kv
+
+* Some Distributed and Parallel Algorithms
+** Patterns of concurrency
+** Promises
+** Parallel Maps
+** PUB SUB (Publish, Subscribe)
+
+* Patterns of concurrency
+** No ``well accepted names''
+** Client-Server
+** Remote Proceedure Call
+** Call and Cast
+** Promise and Yield
+** http://tim.dysinger.net/posts/2013-09-16-getting-started-with-nanomsg.html
+** One-way pipe
+** Request-Reply (I ask, you reply) 
+** Pair (Two way radio)
+** PUB\_SUB (Channels and broadcast)
+** Survey (every can vote)
+** Bus (Routing)
+** Map-reduce one ventilator sending jobs to multiple idene
+
+* ZeroMQ
+
+** REQ - sends request waits for response lock step send-receive
+
+** REP - accecpts requests sends seplies - lock step receive-send
+
+** ROUTER - the is some routine table {Id,Out} a messag on IN contains a tag (Id) and is sent to Out
+
+
+** DEALER - imagine cards being delt. Has a high water mark. Suspends if at hight water mark.
+sends to outputs in round-robin fashion
+
+** PUB
+** SUB
+** PIPELINE - two ports what receoved on In is sent to Out* There can be several Outs
+
+** PUSH -- like send but can retry is the send fails
+** PULL -- pulls data from an endpoint
+** PAIR -- exclisive pair of processes like two pipleines back to back
+** STREAM (should be stream send, stream receive)
+
+* BROKER (From ZMQ)
+
+http://zeromq.org/whitepapers:brokerless
+
+
+Architecture of most messaging systems is distinctive by the messaging
+server ("broker") in the middle. You can think of it as of classical
+"star" or "hub and spoke" architecture. Every application is connected
+to the central broker. No application is speaking directly to the
+other application. All the communication is passed through the broker.
+
+
+There are several advantages to this model.
+
+
+Firstly, applications don't have to have any idea about location of
+other applications. The only address they need is the network address
+of the broker. Broker then routes the messages to the right
+applications based on business criteria ("queue name", "routing key",
+"topic", "message properties" etc.) rather than on physical topology
+(IP addresses, host names).
+
+
+Secondly, message sender and message receiver lifetimes don't have to
+overlap. Sender application can push messages to the broker and
+terminate. The messages will be available for the receiver application
+any time later.
+
+Thirdly, broker model is to some extent resistant to the application
+failure. So, if the application is buggy and prone to failure, the
+messages that are already in the broker will be retained even if the
+application fails.
+
+Drawbacks of broker model are twofold: Firstly, it requires excessive
+amount of network communication. Secondly, the fact that all the
+messages have to be passed through the broker can result in broker
+turning out to be the bottleneck of the whole system. Broker box can
+be utilised to 100% while other boxes are under-utilised, even idle
+almost all the time.
+
+To demonstrate the drawbacks of the broker model, let's consider a
+simple scenario where data have to be processed by four distinct
+applications in a row. The pseudo-code for the scenario will look like
+this:q
+
+(From http://api.zeromq.org/4-0:zmq-socket)
+
+
+** Reqest-Reply - Needs a REQ and REP connector
+** Dealer
+* Pieter Hintjens
+** one ventilator sending jobs to multiple identical workers, with results coming back to one sink (map-reduce, possibly)
+** multiple clients talking to one broker talking to multiple service workers (service oriented architecture)
+** asynchronous objects, where each object is an independent actor thread (typical in some APIs)
+** full cluster, with each node connected to each other node
+** multiple listeners receiving information and then sending requests back to central services (e.g. stock trading platform)
+
+
+ 
+
+
+* PUB-SUB
+** Twiter
+** Facebook
+** Mailing Lists
+** IRC
+** Newsletters
+
+
+
+

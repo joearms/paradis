@@ -1,0 +1,233 @@
+#+STARTUP: overview, hideblocks
+#+BEGIN_kv
+title: Types
+subtitle: Lecture E4 (Chapters 9..10)
+author: Joe Armstrong
+copyright: \copyright 2014 -- Joe Armstrong
+email: joe.armstrong@ericsson.com, joearms@gmail.com
+affiliation: Ericsson AB
+process: orgmode_plugin_slides
+#+END_kv
+
+* W5/F5 - Sequential Erlang 2(b) 
+
+** Chapters 9,10
+** Types - Informative not mandatory.
+** Dynamic and static types - Pros and cons.
+** Type Inference vs. Type checking.
+** Type notation.
+** Dialyzer - a program to analyse for type errors.
+** Compiling.
+** Makefiles.
+** Environment tweaking.
+
+
+* Types
+
+** Erlang is dynamically typed. It makes programs easy to write but not so easy to read.
+** It we see integers or string in a program what do they mean?
+** Can we detect type errors at compile time?
+** Can we use type information to produce optimised code?
+
+* Type Inference vs. Type checking
+
+#+BEGIN_erlang
+foo(X, Y) -> X + Y.
+
++spec bar(integer(), float()) -> float().
+bar(X, Y) -> X + Y
+#+END_erlang
+
+In the definition of \verb+foo+ we are given no type information but
+we can {\sl infer} from the usage patterns of \verb+X+ and \verb+Y+
+are of type \verb+number()+. So we could infer that the program
+fragment \verb+foo("hello", 12)+ was erroneous.
+
+With type inference we detect a collision between the usage and the
+function definition, but we do not know which is correct.
+
+In the definition of \verb+bar+ we say what the types are so we can
+check everything (both the definition and the usage) against the
+specification.
+
+* Dynamic and Static types
+
+** Dynamic types - there are no type declarations, types are checked at run time.
+** Static types - there are type declarations types are checked at run time.
+** Both have the advantages and disadvantages.
+** There is a lot of discussion about this.
+
+* Type notation
+
+** There are primitive types, and type constructors.
+** Primitive types reflect the primitive types in Erlang.
+#+BEGIN_sublist
+\verb+integer()+, \verb+atom()+ ...
+#+END_sublist
+
+** Constructed types are made in three ways:
+#+BEGIN_sublist
+\verb+{Type1(), Type2() , ...}+ -- tuple type
+\verb+Type1() | Type2() | ....+ -- variant type
+\verb+[Type()]+ -- list type
+#+END_sublist
+
+** Types can be annotated with a name (next slide)
+
+* 5 birthday declarations
+
+#+BEGIN_erlang
+birthday1(N) -> N + 1.
+
+-spec birthday2(integer()) -> integer().
+birthday2(N) ->  N+1.
+
+-spec birthday3(Years::integer()) -> Years::integer().
+birthday3(N) ->  N+1.
+
+-type age() :: integer().
+-spec birthday4(age()) -> age().
+birthday4(N) ->  N+1.
+
+-type age1() :: Years :: integer().
+-spec birthday5(age1()) -> age1().
+birthday5(N) ->  N+1.
+#+END_erlang
+   
+* Running typer
+#+BEGIN_erlang
+-export([add/2, bug/1, fac/1]).
+
+add(X, Y) -> X+Y.
+bug(X) -> add("hello", X).
+
+fac(0) -> 1;
+fac(N) -> N * fac(N-1).
+#+END_erlang
+
+#+BEGIN_shell
+$ typer math1_bug.erl 
+%% File: "math1_bug.erl"
+%% ---------------------
+-spec add(number(),number()) -> number().
+-spec bug(_) -> none().
+-spec fac(non_neg_integer()) -> pos_integer().
+#+END_shell
+
+* The dreaded error message
+#+BEGIN_shell
+joearms$ typer math1_bug.erl 
+typer: Dialyzer's PLT is missing 
+or is not up-to-date;
+please (re)create it
+#+END_shell
+
+* Go make a cup of coffee
+
+#+BEGIN_shell
+$ dialyzer --build_plt --apps erts kernel stdlib
+  Compiling some key modules to native code... 
+    done in 1m19.68s
+  Creating PLT /Users/joearms/.dialyzer_plt ...
+Unknown functions:
+  compile:file/2
+  compile:forms/2
+  compile:noenv_forms/2
+  compile:output_generated/1
+  crypto:des3_cbc_decrypt/5
+  crypto:start/0
+Unknown types:
+  compile:option/0
+ done in 2m18.88s
+done (passed successfully)
+#+END_shell
+
+* Dialyzer -- Descrepency analyser for Erlang programs
+
+** Finds things in your program that will cause type errors at run-time.
+** Uses ``success'' typing.
+
+* Working with types
+** Think about your types before you write the program.
+** Write functions one at a time an run the dialyzer after each you've written each new function.
+** Avoid \verb+export_all+.
+** Add guards, this will improve the accuracy of type inference.
+    
+* Dialyzer output
+
+#+BEGIN_shell
+$ dialyzer math1_bug.erl 
+dialyzer math1_bug.erl 
+  Checking whether the PLT /Users/joe/.dialyzer_plt 
+  is up-to-date... yes
+  Proceeding with analysis...
+math1_bug.erl:7: Function bug/1 has no local return
+math1_bug.erl:8: The call 
+   math1_bug:add("hello",X::any()) 
+   will never return since it differs 
+   in the 1st argument 
+   from the success typing 
+   arguments: (number(),number())
+ done in 0m0.98s
+done (warnings were emitted)
+#+END_shell
+
+
+
+* The startup file
+
+** The file {\sl hidden} file \verb+.erlang+ is consulted when you start Erlang.
+** This can be in the directory where Erlang was started or your home directory.
+** This file can contain any Erlang commands. They are executed when you start Erlang.
+
+* Search Paths
+
+** Code is dynamically loaded at run time.
+** \verb+code:get_path()+ tells you want the current path is.
+** The first time you call \verb+foo:+ the system will search for a file called \verb+foo.beam+ using the current search path.
+** use \verb+code:add_patha(Dir)+ or \verb+code:add_pathz(Dir)+ in your startup file.
+   
+* Compiling your program
+
+** In the Erlang shell (\verb+> c(FileName).+)
+** In the OS command shell (\verb+$erlc foo.erl+).
+** From a Makefile.
+** from rebar.
+   
+* Running Erlang from the shell
+
+#+BEGIN_shell
+$ erl -pa Path1 -pa Path2 -s M F Arg1 Arg2 ...
+#+END_shell
+
+** Can use noshell to stop the prompt
+
+\verb+$erl -noshell ...+
+
+* Running Erlang from a shell script
+
+Create a file \verb+runme+ like this:
+
+\begin{Verbatim}[frame=single]
+#!/bin/bash
+$ erl -pa Path1 -pa Path2 -s M F $1 ...
+\end{Verbatim}
+
+Then run it:
+
+\begin{verbatim}
+$ chmod u+x runme
+$ runme arg1 ...
+\end{verbatim}
+
+* Running Erlang from escript
+#+BEGIN_erlang
+#!/usr/bin/env escript
+
+main(_) ->
+    ...
+#+END_erlang
+  
+** chmod the file then you can run it as a script.
+ 
+

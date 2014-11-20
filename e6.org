@@ -1,0 +1,238 @@
+#+STARTUP: overview, hideblocks
+#+BEGIN_kv
+title: Concurrent and Distributed Erlang 
+subtitle: Lecture E6 (Chapters 13..14)
+author: Joe Armstrong
+copyright: \copyright 2014 -- Joe Armstrong
+email: joe.armstrong@ericsson.com, joearms@gmail.com
+affiliation: Ericsson AB
+process: orgmode_plugin_slides
+#+END_kv
+
+* Error and Distributed Programming 
+** Chapters 13,14. 
+** Links.
+** Monitors.
+** The error model.
+** Firewall.
+** Generic Allocator.
+** Why Distributed Programming?
+** Erlang distribution.
+** Explicit sockets and protocols.
+** Distribution BIFS.
+** Nano-twitter.
+** Security.
+
+
+* Links
+  
+** When an unlinked process dies nobody will know about it.
+** When a linked process dies the processes in the link-set of the process will be sent an error signal.
+** A normal process receiving a non-normal error signal will die.
+** A system process will convert the error signal to an error message and can receive it like any other message.
+** A processes that terminates normally sends a normal error siognal to its link set.
+
+* Error handling BIFs
+
+** \verb+link(Pid)+ \verb+unlink(Pid)+
+** \verb+process_flag(trap_exit, true)+
+** \verb+spawn_link(Fun)+ \verb+spawn_link(M,F,A)+
+** \verb+exit(Pid, Why)+ \verb+exit(Pid, kill)+
+
+* Trapping exits
+#+BEGIN_erlang
+start() ->
+    spawn_link(M, F, A) end.
+
+start() ->
+    process_flag(trap_exit, true),
+    loop().
+
+loop() ->
+    receive
+       {'EXIT', Pid, Why} ->
+             ...
+    end.
+#+END_erlang
+
+* A process that restarts a failed process
+#+BEGIN_erlang
+start_and_watch() ->
+    Pid = spawn(f6, loop1, []),
+    spawn(f6, watch, [Pid]),
+    Pid.
+
+watch(Pid) ->
+    link(Pid),
+    process_flag(trap_exit, true),
+    print({watching, Pid}),
+    receive
+	{'EXIT', Pid, Why} ->
+	    print({ohDear,Pid,crashed,because,Why})
+    end.
+#+END_erlang
+
+* Running the watcher
+#+BEGIN_shell
+Pid2 = f6:start_and_watch().
+{watching,<0.62.0>}
+<0.62.0>
+9> Pid2 ! {square,abc}.        
+{ohDear,<0.62.0>,crashed,because,
+        {badarith,[{f6,loop1,0,[{file,"f6.erl"},{line,21}]}]}}
+
+=ERROR REPORT==== 31-Jan-2014::10:26:29 ===
+Error in process <0.62.0> with exit value: 
+  {badarith,[{f6,loop1,0,[{file,"f6.erl"},{line,21}]}]}
+
+{square,abc}
+#+END_shell
+
+* Spawn and Link race conditions
+#+BEGIN_erlang
+start_and_watch() ->
+    Pid = spawn(f6, loop1, []),
+    spawn(f6, watch, [Pid]),
+    Pid.
+
+watch(Pid) ->
+    link(Pid),
+    process_flag(trap_exit, true),
+    ...
+#+END_erlang
+
+** If you are very quick, loop1 might crash {\sl before} the watcher executes the \verb+link+ statement.
+** That's why we have \verb+spawn_link+.
+
+* Monitors
+
+** One directional links.
+** A monitor is like two links ``back to back''.
+
+* The Worker/Manager model
+** Workers do work. They crash if they cannot do what they are supposed to do.
+** Managers detect the failure of workers and restart them.
+** \verb+start_and_watch+ was a very simple Worker/Manager program.
+** OTP has supervisors which generalises this idea.
+** Akka (Java) is a clone of this idea.
+
+* Generic Allocator
+** Server links to clients and deallocates respources if the clients crash
+#+BEGIN_erlang
+loop(State) ->
+  receive
+    {From, Tag, {allocate, X}} ->
+        {Resource, State1} = allocate(From, X, State),
+        link(From),
+        From ! {Tag, Resource},        
+        loop(State1);
+    ...
+
+    {'EXIT', Pid, _} ->
+        State1 = dealloc_resources_owned_by(Pid, State),
+        loop(State1)
+  end.
+#+END_erlang
+
+* Distributed Programming?
+** Fun.
+** World is distributed.
+   
+* Erlang distribution
+** Needs only one new idea.
+** \verb+spawn(Node, Mod, Func, Args)+.
+** Remote Pids work just like local Pids.
+** Can test on one machine, deploy on many.
+* Nano twitter
+#+BEGIN_erlang
+start() ->
+    register(twit, spawn(nano_twitter, watcher, [])).
+
+watcher() ->
+    receive
+	Any ->
+	    print({tweet, Any}),
+	    watcher()
+	after 5000 ->
+		print(yawn),
+		watcher()
+	end.
+
+connect() ->
+    pong = net_adm:ping('twit@joe').
+
+tweet(Msg) ->
+    rpc:cast('twit@joe', erlang, send, [twit, Msg]).
+#+END_erlang
+
+* Running Nano Twitter
+
+In one terminal:
+
+#+BEGIN_shell
+erl  -noshell -sname twit -s nano_twitter start
+yawn
+...
+#+END_shell
+
+Someplace else:
+
+#+BEGIN_shell
+$ erl -sname one
+(one@joe)1> nano_twitter:connect().
+pong
+(one@joe)2> nano_twitter:tweet('hi joe').
+true
+#+END_shell
+
+Back where you started:
+
+#+BEGIN_shell
+yawn
+{tweet,'hi joe'}
+#+END_shell
+
+* Fun Exercise (1) 
+** No credits.
+** Extend \verb+nano_twitter+
+** Work in pairs.
+** Client on one machine.
+** Same LAN.
+** Server on a different machine
+
+* Fun Exercise (2)
+** No credits. 
+** Server on a different machine with a different OS.
+** On a WAN.
+
+* Fun Exercise (3) 
+** No credits.
+** Get the entire class running.
+
+* Fun Exercise (4)
+
+** Credits. 
+** \verb+$$$$+
+** Quit school.
+** Form a company.
+** Connect the world togther.
+
+* RTFM
+
+** \verb+http://www.erlang.org/doc/reference_manual/distributed.html+
+** Designed for clusters in the same LAN not wide scale distribution.
+** Cookie security.
+** Great for tightly connected clusters in the samer administrative domain.
+** Code distribution problem not solved (assumes same backend to fetch the code from) - originally all nodes read from a NFS file system.
+   
+* Next Week
+
+** Doing it with sockets :-)
+
+* Have fun
+
+#+BEGIN_image
+height:10cm
+image:theend.jpg
+title:  
+#+END_image 

@@ -1,0 +1,54 @@
+#+STARTUP: overview, hideblocks
+#+BEGIN_kv
+title: Sequential Erlang 
+subtitle: Lecture E12 (Chapters 23..25)
+author: Joe Armstrong
+copyright: \copyright 2014 -- Joe Armstrong
+email: joe.armstrong@ericsson.com, joearms@gmail.com
+affiliation: Ericsson AB
+process: orgmode_plugin_slides
+#+END_kv
+
+* E12 - gen\_server, etc. Idioms Chapters 23,24
+
+
+
+** gen\_server
+** gen\_supervisor
+** Idioms
+** Erlang view of the world
+** Physical modeling - Agents
+
+* gen\_server
+
+* PUB SUB
+
+** There are number of CHANNELS
+** You can send messages to a channel
+** You can subscribe to a channel
+** All messages sent to a channel are sent to the people who have currently connected to the channel
+
+* pubsub0.erl
+* pubsub1.erl
+** Rudimenrary error handline
+
+
+  
+* W9/F13 - Third party code + Bit Torrent 1 theory Chapter 25
+** Rebar
+** Github
+** Not in the book
+** Describe the bit torrent protocol
+** Generating the Digest
+** Authentication
+** Security
+** Scalability
+** Fault tolerance
+** Program 1 - The torrent maker
+** Program 2 - The Index
+** Program 3 - The tracker
+** Program 4 - The Peers
+** Program 5 - Statistics
+** Security aspects
+
+

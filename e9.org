@@ -1,0 +1,283 @@
+#+STARTUP: overview, hideblocks
+#+BEGIN_kv
+title: Databases + OTP
+subtitle: Lecture E9 (Chapters 19..21)
+author: Joe Armstrong
+copyright: \copyright 2014 -- Joe Armstrong
+email: joe.armstrong@ericsson.com, joearms@gmail.com
+affiliation: Ericsson AB
+process: orgmode_plugin_slides
+#+END_kv
+* W8/F10 - ETS, DETS Mnesia Database,Debugging etc. Chapters 19, 20,21
+
+Several databases have been implemented in Erlang:
+
+** Mnesia - Real-time database. Fail-safe. Hot standby.
+** CouchDB - ``Document Database'' stores JSON documents. Replicates over a cluster. Used by CERN. Stored data that led to the discovery of the Higgs boson. 
+** Riak - Key-Value ``Eventually Consistant'' database. ``Internet scale''.
+** Cloudant - Cloud database. Data layer ``as a service''.
+** Amazon - SimpleDB.
+
+* Architecture
+
+** Erlang has only non-destructive data types. So how can we store gigantic quantites of data?
+** We cheat!
+** ETS (Erlang Term Storage) is a {\sl destructive} tuple store.
+** DETS (Disk ETS) is a {\sl destructive} disk store, with a journal for crash recovery.
+** Basho have implemented their own disk store (bitcask) as the backend for Riak.
+** CouchDB uses a B* tree with concurrency control.
+** Replicating data is very very difficult.
+
+* ETS
+** ETS tables behave like linked processes.
+** ETS \verb+named_tables+ behave like registered processes. 
+** Very fast in-memory hash tables.
+** No transations.
+** Can share data between processes, but there is no locking when writing to the tables.
+** Can save and restore to file.
+** Object are stored off-stack and off-heap. This means objects in ETS tables do not slow down the garbage collection, but lookups copy data from tables to the heap.
+
+
+
+
+* ETS sets
+#+BEGIN_shell
+1> ets:new(phone_numbers, [set,named_table]). 
+phone_numbers
+2> ets:insert(phone_numbers, {joe,1234}).
+true
+3> ets:insert(phone_numbers, {bill,123456}).
+true
+4> ets:lookup(phone_numbers, joe).
+[{joe,1234}]
+5> ets:insert(phone_numbers, {joe,2234}).      
+true
+6> ets:lookup(phone_numbers, joe).       
+[{joe,2234}]
+#+END_shell
+
+* ETS bags
+#+BEGIN_shell
+7> ets:delete(phone_numbers).
+true
+9> ets:new(phone_numbers, [bag,named_table]).
+phone_numbers
+10> ets:insert(phone_numbers, {joe,1123}).    
+true
+11> ets:insert(phone_numbers, {joe,2244}).
+true
+12> ets:lookup(phone_numbers, joe).           
+[{joe,1123},{joe,2244}]
+#+END_shell
+
+* ETS save and restore
+
+** Save the table and exit:
+
+#+BEGIN_shell
+13 > ets:tab2file(phone_numbers, "foo").
+ok
+15> 
+BREAK: (a)bort (c)ontinue (p)roc info (i)nfo (l)oaded
+       (v)ersion (k)ill (D)b-tables (d)istribution
+a
+#+END_shell
+
+** Some time later ..
+
+#+BEGIN_shell
+joe:paradis joe$ erl
+Erlang/OTP 17 [RELEASE CANDIDATE 1] [erts-6.0] [source] [64-bit] [smp:2:2] [async-threads:10] [hipe] [kernel-poll:false]
+
+Eshell V6.0  (abort with ^G)
+1> ets:file2tab("foo").
+{ok,phone_numbers}
+2> ets:lookup(phone_numbers, joe). 
+[{joe,1123},{joe,2244}]
+#+END_shell
+   
+* Putting it all togther
+#+BEGIN_erlang
+-module(index).
+-compile(export_all).
+
+make() ->
+    Ets = ets:new(index, [bag, named_table]),
+    {ok, C} = re:compile("(?:\\,|\\.|\\;|\\:|\\s|[0-9]+)+"),
+    {ok, Files} = file:list_dir("."),
+    Orgs = [F || F <- Files, filename:extension(F) == ".org"],
+    [add_index(File, C) || File <- Orgs],
+    ets:tab2file(Ets, "index.ets"),
+    ets:delete(index).
+
+add_index(File, C) ->
+    {ok, Bin} = file:read_file(File),
+    [ets:insert(index, {to_lower(I),File}) || I <- re:split(Bin, C)].
+
+to_lower(B) -> list_to_binary(string:to_lower(binary_to_list(B))).
+
+lookup() ->
+    ets:file2tab("index.ets"),
+    V = ets:lookup(index,<<"armstrong">>),
+    ets:delete(index),
+    V.
+#+END_erlang
+
+* Building and querying the index
+
+#+BEGIN_shell
+1> index:make().
+true
+#+END_shell
+
+#+BEGIN_shell
+2> index:lookup().
+[{<<"armstrong">>,"bug.org"},
+ {<<"armstrong">>,"f10-f11.org"},
+ {<<"armstrong">>,"f12-f13.org"},
+ {<<"armstrong">>,"f19-f20.org"},
+ {<<"armstrong">>,"f2-f3.org"},
+ {<<"armstrong">>,"f4-f5.org"},
+ {<<"armstrong">>,"f6-f7.org"},
+ {<<"armstrong">>,"f8-f9.org"},
+ {<<"armstrong">>,"plan.org"},
+ {<<"armstrong">>,"test_slides.org"}]
+#+END_shell
+
+* ETS reference
+** http://learnyousomeerlang.com/ets.
+** http://www.erlang.org/doc/man/ets.html.
+
+
+* DETS
+** Data is stored on disk.
+** Interface ``similar to'' ETS (but not identical).
+** Has crash recovery. DETS tables are repaired on restart if they were not closed properly. This can happen after a system crash.
+
+* DETS
+** Yawn ...
+** Same as ETS (almost) RTFM.
+** There are some exercises on ets and dets.
+
+* Mnesia Creating a database
+
+#+BEGIN_shell
+$ cd mnesia
+$ erl
+1> mnesia:create_schema([node()]).
+ok
+2> init:stop().
+ok
+$ ls
+#+END_shell
+
+* Mnesia: Creating a table
+
+
+#+BEGIN_erlang
+-record(shop,   {item, quantity, cost}).
+-record(design, {id, plan}).
+-record{cost,   {name,price}.
+
+do_this_once() ->
+    mnesia:create_schema([node()]),
+    mnesia:start(),
+    mnesia:create_table(shop,   [{attributes, record_info(fields, shop)}]),
+    mnesia:create_table(cost,   [{attributes, record_info(fields, cost)}]),
+    mnesia:create_table(design, [{attributes, record_info(fields, design)}]),
+    mnesia:stop().
+#+END_erlang
+
+* Adding and removing data
+
+#+BEGIN_erlang
+example_tables() ->
+    [%% The shop table
+     {shop, apple,   20,   2.3},
+     {shop, orange,  100,  3.8},
+     ...]
+     %% The cost table
+     {cost, apple,   1.5},
+     {cost, orange,  2.4},
+     ...
+    ].
+
+create_tables() ->
+    F = fun() ->
+           lists:foreach(fun mnesia:write/1, example_tables())
+	end,
+    mnesia:transaction(F).
+#+END_erlang
+
+* Simple Mnesia Queries
+
+** Reading data:
+
+#+BEGIN_erlang
+get_plan(PlanId) ->
+    F = fun() -> mnesia:read({cost, orange}) end,
+    mnesia:transaction(F).
+#+END_erlang
+
+* Transactions
+
+** Mnesia is interfaced through transactions.
+** Transactions either succeed or fail. If they fail the state of the database is unvhanged.
+
+#+BEGIN_erlang
+some_function() ->
+    F = fun(Args) -> {aborted, Reason} | {atomic, Result},
+    mnesia:transaction(F).
+#+END_erlang
+
+* Mnesia: advanced
+
+** Tables can be repliced in memory on disk and across machines.
+** Tables can be striped across machines.
+** In a fault-tolerent system data is replicted on different nodes. There is usually a master node and a hot standby. 
+  
+* Profiling
+#+BEGIN_shell
+> cprof:start().
+6505
+8> orgmode_parse:transform(['f10-f11.org']).
+Transforming:"f10-f11.org"
+...
+9> cprof:pause().
+6505
+10> cprof:analyse(orgmode_parse).
+{orgmode_parse,10248,
+               [{{orgmode_parse,is_stop,2},3638},
+                {{orgmode_parse,get_body,3},3361},
+                {{orgmode_parse,get_line,2},2619},
+..
+#+END_shell
+
+* Coverage
+
+** Finding code that has never run
+** Finding hot spots
+
+#+BEGIN_shell
+1> cover:start().
+{ok,<0.34.0>}
+2> cover:compile(orgmode_parse).
+{ok,orgmode_parse}
+3> orgmode_parse:transform(['f10-f11.org']).
+Transforming:"f10-f11.org"
+..
+Created:f10-f11.org.tex
+Z:ok
+ok
+4> cover:analyse_to_file(orgmode_parse).
+{ok,"orgmode_parse.COVER.out"}
+#+END_shell
+
+
+
+
+
+
+
+
+

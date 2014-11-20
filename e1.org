@@ -1,0 +1,326 @@
+#+STARTUP: overview, hideblocks
+#+BEGIN_kv
+title: Sequential Erlang 
+subtitle: Lecture E1 (Chapters 1..6)
+author: Joe Armstrong
+copyright: \copyright 2014 -- Joe Armstrong
+email: joe.armstrong@ericsson.com, joearms@gmail.com
+affiliation: Ericsson AB
+process: orgmode_plugin_slides
+#+END_kv
+
+* Concurrent Erlang
+
+Really I'd like to start the course with concurrent and distributed
+programming. \textcolor{Red}{But we have to learn to write sequential programs
+before we can write concurrent programs}.
+
+Learning to write sequential Erlang programs takes a while. 
+It's a functional programming language and it takes a while to get used to this.
+
+Writing concurrent programs is {\sl easy} - but debugging them can be
+hard.
+
+Some distributed problems are \textcolor{red}{impossible} to solve {\sl
+there are theorems about this} -  we won't solve these :-)
+
+* What we'll do
+** Learn Sequential Erlang.
+** Learn Concurrent Erlang.
+** Leann Distributed Erlang.
+** Learn How to write concurrent and parallel programs.
+** Make a bit-torrent like program ``the Erlang way''.
+** Start a company and earn a trillion dollars (not in this course).
+** Change the world.
+** Have fun.
+
+* and how we will do it...
+** Each week will cover a continuous sequence of chapters from {\sl Programming Erlang}.
+** This week cover chapters 1..6.
+** There is one set of slides and one set of problems per week.
+** The lectures have a lot of live coding (not in the slides).
+** The exercises must be done within a week.
+** You get out of the course what you put into it. 
+** Warn me if I drift off topic :-) {\sl we can always talk after the lectures}.
+   
+* How to learn any programming language
+** Get a decent book.
+** Type in all the examples (do not cut and paste examples).
+** There is a slow method to learn languages {\sl Google for the answer to every problem...}
+
+* The course website
+** Assignments and other material are at \url{https://github.com/joearms/paradis/blob/master/week4_problems.erl}.
+** It's a GIT repository. Please push changes to me. {\sl help me improve the course better}.
+   
+* Help me improve the course
+** We start with a emacs org-mode, this file is \verb+f2-f3.org+.
+** An Erlang program \verb+orgmode_parse.erl+ transforms it into \verb+f2-f3.org.tex+. This adds color coding of code and a few other nice things.
+** Run \verb+pdflatex+ twice and get \verb+f2-f3.org.pdf+.
+** This system was written last week and is possibly buggy.
+** Please help me improve the material. Push all changes to github.
+** There are no course credits for helping.
+** \textcolor{Red}{tell me if the examples are too easy or difficult}. They should take N hours/week. What is N?
+
+* Let's get started
+	
+#+BEGIN_image
+height:10cm
+image:Erlang.jpg
+title:Agner Krarup Erlang (1878 - 1929)
+#+END_image
+  
+* Erlang
+
+** Erlang was designed for building {\bf fault-tolerant}, {\bf concurrent}, {\bf scaleable} applications.
+** The world {\sl is} concurrent.
+** Erlang belongs to the {\bf actor} family of languages. There are two types of concurrency:
+** Shared-Memory Concurrency (Lectures F16..F18).
+** Message Passing Concurrency - Sending and receiving messages is the only way for processes to exchange data.
+** We never know if a message is received (it might get lost on the way) - If you want to know if a message has been received then send a reply.
+** Message passing is ``Location transparent'' (like sending letter in the mail).
+   
+* Erlang 
+
+** ``Functional'' core.
+** ``Math'' variables.
+** \textcolor{red}{Beautiful syntax}.
+** No mutable data (not really true).
+** Concurrency (and parallelism) is built-in.
+** Inbuilt fault-tolerance.
+** Modules.
+** Not OO (Actors).
+** Practical.
+** Battle Tested (not a theory).
+
+* Starting the shell
+
+** Mac OX-S, *nix:
+
+\verb+> erl+
+
+** Windows:
+
+\verb+Programs -> OTP ... -> Erlang+
+
+
+#+BEGIN_shell
+$ erl
+Erlang (BEAM) emulator version 5.5.4 [source] 
+  [async-threads:0] [kernel-poll:false]
+Eshell V5.5.4  (abort with ^G)
+1> 1 + 2 * 3.
+7
+#+END_shell
+
+* Stopping the shell
+
+** \verb|(ctrl)+\| -- immediate exit
+** \verb+init:stop()+ -- controlled exit
+** \verb+erlang:halt()+ -- uncontrolled exit
+** \verb|(ctrl)+C|
+
+#+BEGIN_shell
+BREAK: (a)bort (c)ontinue (p)roc info (i)nfo 
+       (l)oaded (v)ersion (k)ill (D)b-tables 
+       (d)istribution
+a
+#+END_shell
+
+* Shell commands
+
+** Shell is \verb+read-eval-print+ loop.
+** Commands end \verb+.+\textcolor{Red}{WS}.
+** Repeated prompt means command is not yet finished:
+
+#+BEGIN_shell
+1> 12234 * 12313.
+150637242
+2> math:sqrt(2).
+1.41421
+3> [123, abc,"hello"].
+[123,abc,"hello"]
+4> 1234 +
+4> 34524249 *
+4> 11112231.
+383641429990753
+#+END_shell
+
+* Using the shell
+** REPL (Read Eval Print Loop) is typical for this type of language.
+** Same of all platforms (good for windows).
+** A session: \textcolor{Red}{Show this}:
+
+#+BEGIN_shell
+$erl
+...
+1> X = 23+10.
+33
+2> X + X.
+66
+...
+#+END_shell
+   
+** \textcolor{Red}{All expressions end in ``.''}.
+** Quit with \verb+q()+ or \verb+^C+.
+** Emacs conventions apply in the shell.
+
+* Variables don't vary
+
+** \textcolor{Red}{Variable start with an uppercase letter} and are bound with =:
+
+#+BEGIN_shell
+$erl
+...
+1> X = 10.
+10
+2> X = 20.
+  exception error: 
+   no match of right hand side value 20
+...
+3> X1 = 20.
+20
+#+END_shell
+
+** Use a new variable each time (more later)
+
+* Data Types
+Erlang has two types of data.
+There are {\sl Primitive data types} (atoms, integers, floats) etc. and
+{\sl Compound data types}. Compound data types glue together 
+data. The two most common forms of glue are {\sl Lists} and
+{\sl Tuples}. Records provide syntactic sugar for accessing tuples.
+{\sl maps} are associative Key-Value stores.
+
+#+BEGIN_shell
+> X = abc.
+abc
+> Y = 123.
+123
+> L = [abc,123].
+[abc,123]
+> M = [xyz,L,1234].
+[xyz,[abc,123],1234]
+#+END_shell
+
+* Strings
+** There are no strings in Erlang.
+** Strings are lists of integers:
+#+BEGIN_shell
+1> "abc".
+"abc".
+2> [abc|"abc"].
+[abc,97,98,99]
+#+END_shell
+
+* Primitive Data Types
+
+** Atoms \verb+monday+ \verb+tuesday+ - \textcolor{Red}{Remember atoms start with a lower case letters}.
+** Booleans \verb+true+ \verb+false+.
+** Integers 123, 213091038018301830810381038018, 16\#f234, 2\#23, \$a:
+
+#+BEGIN_shell
+> x = abc.
+  exception error: 
+  no match of right hand side value abc
+> x = x.
+x
+#+END_shell
+
+* Numbers
+** Integers:
+
+#+BEGIN_sublist
+1234 
+27391836713581739719319837917391739173218361836
+16\#ca23ad12 -- hex
+2\#1010101   -- base 2
+N\#DDDDD     -- base N
+\$a (asci code for a = 97)
+#+END_sublist
+
+
+** Floats.
+** Atoms:
+
+#+BEGIN_sublist
+Booleans \verb+true+, \verb+false+
+Constants \verb+monday+, \verb+tuesday+
+#+END_sublist
+
+* Compound Data (Lists)
+
+** Lists are containers for a \textcolor{red}{variable} number of items.
+** \verb+X = [1,2,3,abc,true]+ - Even complex items can be in the list.
+** \verb+[Head|Tail]+ is used to construct or deconstruct a list:
+
+#+BEGIN_shell
+> L = [1,2,3,4].
+[1,2,3,4]
+> [H|T] = [1,2,3,4].
+[1,2,3,4]
+> H.
+1
+> T.
+[2,3,4]
+#+END_shell
+
+* Constructing a list
+#+BEGIN_shell
+> T = [1,2,3].
+[1,2,3]
+> H = a.
+a
+> [H|T].
+[a,1,2,3]
+#+END_shell
+  
+* What is a list (really)
+
+** It's a cons cell in LISP.
+** It's ``linked list'' in C.
+
+* Tuples
+
+** Tuples are containers for a \textcolor{red}{fixed} number of items:
+
+#+BEGIN_shell
+> X = {1,2,3}.
+{1,2,3}.
+> {_,Y,_} = X.
+{1,2,3}.
+> Y.
+2
+#+END_shell
+
+* Patterns
+
+** A ``Term'' is an atomic or compound data value.
+** A ``Pattern'' is a data value or a variable.
+** Variables are bound in pattern matching operations:
+
+#+BEGIN_shell
+> X = {1,2,1}.
+{1,2,1}
+> {Z,A,Z} = X. ???
+> {P,Q,R} = X. ???
+...
+#+END_shell
+
+** If variables are repeated in a pattern then they must bind to the same value.
+** \verb+_+ is a wildcard (matches anything).
+
+* Unpacking  a list
+
+#+BEGIN_shell
+> L = [1,2,3,4].
+[1,2,3,4]
+> [H|T] = L.
+[1,2,3,4]
+> H.
+1
+> T.
+[2,3,4]
+#+END_shell
+
+** \textcolor{red}{Show lot's of examples}.  
+

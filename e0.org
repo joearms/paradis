@@ -1,0 +1,73 @@
+#+STARTUP: overview, hideblocks
+#+BEGIN_kv
+title: Erlang Course Schedule 
+subtitle: Lecture E0 
+author: Joe Armstrong
+copyright: \copyright 2014 -- Joe Armstrong
+email: joe.armstrong@ericsson.com, joearms@gmail.com
+affiliation: Ericsson AB
+process: orgmode_plugin_slides
+#+END_kv
+
+* About
+
+** Assignments and other material are at \url{https://github.com/joearms/paradis1}
+** It's a GIT repository. Please push changes to me. {\sl help me improve the course better}.
+   
+* Schedule
+** Week48 E1 - E2
+** Week49 E3 - E4
+** Week50 E5 - E6
+** Week51 E7 - E8
+** Week2 (1015) E9 - E10
+** Week3 (2015) E11
+
+* Week48 E1 - E2
+** Sequential Erlang
+** The shell
+** Compilation Modules, Functions
+** Problems \#1
+* Week49 E3 - E4
+** Binaries
+** the awesomeness of the Bit styntax
+** The awesomeness of Term to Binary
+** BIFS
+** Types
+** Type checking
+** Compiling 
+** Makefiles
+
+** Problems \#2
+* Week50 E5 - E6
+** Concurrency
+** Client server
+** Distriubuted programming
+** Errors
+** Problems \#3
+* Week51 E7 - E8
+** Sockets
+** Files
+** UDP and  TCP
+** Websockets
+
+** Problems \#4
+* Week2 (1015) E9 - E10
+** Databases
+** ETS/Dets/Mnesia/3'rf party DBs
+** The road to the gen server
+
+** Problems \#5
+* Week3 (2015) E11  
+** Algorithms for distriubuted programming
+
+** Problems \#6
+
+* Help me improve the course
+** We start with a emacs org-mode, this file is \verb+f0.org+.
+** An Erlang program \verb+orgmode_parse.erl+ transforms it into \verb+f0.org.tex+. This adds color coding of code and a few other nice things.
+** Run \verb+pdflatex+ twice and get \verb+e0.org.pdf+.
+** This system was written last week and is possibly buggy.
+** Please help me improve the material. Push all changes to github.
+** There are no course credits for helping.
+** \textcolor{Red}{tell me if the examples are too easy or difficult}. They should take N hours/week. What is N?
+

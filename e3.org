@@ -1,0 +1,207 @@
+#+STARTUP: overview, hideblocks
+#+BEGIN_kv
+title: Binaries, the Bit sytax and BIFS
+subtitle: Lecture E3 (Chapters 7..8)
+author: Joe Armstrong
+copyright: \copyright 2014 -- Joe Armstrong
+email: joe.armstrong@ericsson.com, joearms@gmail.com
+affiliation: Ericsson AB
+process: orgmode_plugin_slides
+#+END_kv
+
+* F4 - Sequential Erlang 2(a) 
+** Chapters 7,8 
+
+** Binaries - storing blocks.
+** Bit Syntax - manipulation bits.
+** Bit Syntax examples.
+** Guards - extending pattern matching.
+** Rest of Sequential Erlang - lots of small things.
+   
+
+* Why Binaries and the Bit Syntax?
+** Representing large blogs of data.
+** Parsing Protocol data
+
+\begin{Verbatim}
+  |----------+------------+------+---------+-----|
+  | DataRate | FlowNumber | Port | SubRack | ... |
+  |----------+------------+------+---------+-----|
+   3 bits      5 bits     2 bits     7 bits
+\end{Verbatim}
+
+** In Erlang this is easy:
+   
+#+BEGIN_erlang
+<<DataRate:3, FlowNumber:5,Port:2,...>>
+#+END_erlang
+
+
+
+* Why the bit syntax?
+** Designed for packing and unpacking bit aligned data.
+** Very efficient.
+** Packing and unpacking bit aligned data with bsr,bsl,xor,band is tedious and extremely error prone.
+** No other language has this.
+** Origonally designed for implementing S7 signalling (and related protocols).
+ 
+
+* Binaries
+
+** Used to store large data ``blobs''.
+** 1 byte / per byte + a small overhead -- lists are 8 bytes/byte.
+** Not copied in inter-process message passing {\sl on the same machine}.
+** ``fancy'' GC.
+
+* Binaries - syntax
+
+#+BEGIN_shell
+1> X = <<5,10,22>>.
+<<5,10,22>>
+2> B = <<45,X/binary>>.
+<<45,5,10,22>>
+
+#+END_shell
+
+
+
+* Endianness of integers
+
+** big endian - most significant byte first.
+** little endian - most signicant byte last.
+** network byte order -- same as big.
+
+** You should always encode integers as \textcolor{Red}{Big Endian} integers in network protocols.
+
+* Packing/Unpacking Binaries
+#+BEGIN_shell
+1> <<2#0000000100000001:16,2>>.
+<<1,1,2>>
+2> <<1234:32/big,2>>.                     
+<<0,0,4,210,2>>
+3> <<1234:32/little,2>>.
+<<210,4,0,0,2>>
+4> <<1234:32/native,2>>.
+<<210,4,0,0,2>>
+5> <<3.14159:32/float>>.         
+<<64,73,15,208>>
+6> <<3.14159:64/float>>.
+<<64,9,33,249,240,27,134,110>>
+#+END_shell
+
+* Bit Syntax examples
+
+** 32 bit words are a pain to unpack
+** \verb+X = 0xafab1234+ 
+** extract 3 bits then 6 bits then 2 bits 
+#+BEGIN_erlang
+<<X:3,Y:6,Z:2, ...>> = Var
+#+END_erlang
+** (\verb+1010 1111 1010 1011 0001 0010 0011 0100+)
+** 101 011111 01 = 5, 31, 1
+
+#+BEGIN_shell
+1> X = 16#afab1234.
+2947224116.
+2> B = <<X:32/unsigned-integer>>.
+<<175,171,18,52>>
+3> <<P:3,Q:5,R:1,_/bits>> = B.
+<<175,171,18,52>>
+4> P.
+5
+5> Q.
+15
+6> R.
+#+END_shell
+
+
+
+
+* Unpacking an IPv4 Datagram
+
+#+BEGIN_erlang
+-define(IP_VERSION, 4). -define(IP_MIN_HDR_LEN, 5).
+...
+DgramSize = byte_size(Dgram), 
+case Dgram of
+   <<?IP_VERSION:4, HLen:4, SrvcType:8, TotLen:16,
+      ID:16, Flags:3, FragOff:13,
+      TTL:8, Proto:8, HdrChkSum:16,
+      SrcIP:32,
+      DestIP:32, RestDgram/binary>> when HLen >= 5, 
+         4*HLen =< DgramSize -> 
+         OptsLen = 4*(HLen - ?IP_MIN_HDR_LEN), 
+   <<Opts:OptsLen/binary,Data/binary>> = RestDgram,
+     ...
+#+END_erlang
+
+
+* Binary BIFS
+
+** \verb+list_to_binary(ListOrDeepList) -> Binary+.
+** \verb+binary_to_list(Binary) -> List+.
+** \verb+term_to_binary(Term) -> Binary+.
+** \verb+binary_to_term(Term) -> Binary+. 
+
+And many more
+
+** \verb+erl -man binary+.
+** \verb+term_to_binary+ and its inverse are \textcolor{red}{incredibly useful}.
+
+* The awesomeness of term\_to\_binary
+** Universal serial/deserialiaze \textcolor{red}{any} Erlang term.
+** Used in distributed Erlang.
+** Used in databases.
+** Very Fast.
+   
+* Example of some awesomeness
+#+BEGIN_erlang
+encode(Term, Password, PublicKey) ->
+    Bin = term_to_binary(Term),
+    SecretBinary = encode(Bin, Password),
+    Term1 = sign(SecretBinary, PublicKey),
+    Bin1 = term_to_binary(Term1),
+    Len = size(Bin),
+    <<Len:32/big, Bin>>.
+
+decode(Bin, Password, PrivateKey) ->
+    <<Len:32/big, B1>> = Bin,
+    Term1 = binary_to_term(B1),
+    Bin1 = term_to_binary(Term),
+    SecretBinary = decode(Bin1, PrivateKey),
+    Bin = decode(SecretBinary, Password),
+    binary_to_term(Bin).
+#+END_erlang
+
+
+
+* Guards
+
+** Used to extend pattern matching:
+#+BEGIN_erlang
+func(X, Y) when length(X) > length(Y) ->
+  ...
+func(X) when is_tuple(X), size(X) > 3 ->
+  ...
+#+END_erlang
+** or in \verb+if+ exressions.
+** Cannot be user defined.
+** Cannot have side effects.
+   
+* Rest of Sequential Erlang
+
+This is chapter 8 in the book. Mainly for reference:
+
+** Comments.
+** Block expressions.
+** Escape Sequences.
+** Include Files.
+** Underscore variables.
+** Tuple Modules.
+** get/put.
+** etc...
+   
+
+
+ 
+

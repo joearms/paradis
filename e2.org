@@ -1,0 +1,469 @@
+#+STARTUP: overview, hideblocks
+#+BEGIN_kv
+title: Modules and Functions
+subtitle: Lecture E2 (Chapters 1..6)
+author: Joe Armstrong
+copyright: \copyright 2014 -- Joe Armstrong
+email: joe.armstrong@ericsson.com, joearms@gmail.com
+affiliation: Ericsson AB
+process: orgmode_plugin_slides
+#+END_kv
+
+* Functions
+
+** Multiple Entry Points
+
+#+BEGIN_erlang
+area({square,X}) -> X*X;
+...
+area({rectangle,X,Y}) -> X*X.
+#+END_erlang
+  
+** C/Javascript/... have single entry points so don't write:
+
+\begin{Verbatim}
+function area(X){
+   if(X.type == 'square'){
+      ...
+   } elseif{X.type='rectangle'){
+      ...
+}
+\end{Verbatim}
+
+* Modules
+** All code is defined in modules.
+** Modules are the unit of compilation.
+** Modules can live-upgraded.
+** Modules limit the visibility of internal functions.
+* Structure of a Module
+** Modules look like this:
+#+BEGIN_erlang
+-module(math1).
+-export([area/1]). 
+
+area({square,X}) -> X*X;
+area({rectangle,X,Y}) -> X*Y.
+#+END_erlang
+** The filename \textcolor{red}{must} be \verb+math1.erl+:
+#+BEGIN_shell
+$ erl
+1> c(math1).
+{ok,math1}
+2> math1:area({square,12}).
+144
+#+END_shell
+* Punctuation
+** DOT whitespace ends a function.
+** Semicolon ``;'' separates clauses.
+** Comma ``,'' separates arguments.
+** Getting the punctuation wrong is the single biggest mistake beginners make.
+** Use a text editor that matches parentheses.
+ 
+* Add Unit tests
+** Add unit test like this:
+#+BEGIN_erlang
+-module(math2).
+-export([test/0, area/1]). 
+
+test() ->
+    144 = area({square,12}),
+    200 = area({rectangle,10,20}),
+    hooray.
+
+area({square,X}) -> X*X;
+area({rectangle,X,Y}) -> X*Y.
+#+END_erlang
+
+* Exports
+#+BEGIN_erlang
+-module(mod1).
+-export([func1/2, func3/2]). %% public stuff
+
+func1(X, Y) ->    %% A public function
+   boo(X, Y, 12).
+
+boo(X, Y, X) ->   %% A private function
+   ...
+#+END_erlang
+
+** Cheat \verb+-compile(export_all).+
+
+* Imports
+
+** Imports permit a short form of the calling sequence.
+** Late Binding - always calls the latest version of the code:
+
+#+BEGIN_erlang
+-module(mod1).
+-import(lists, [reverse/1]).
+
+func1(L) ->
+   L1 = reverse(L). %% it's really lists:reverse
+#+END_erlang
+
+** Cheat \verb+-compile(export_all).+
+* Assignments
+
+Fetch \url{https://github.com/joearms/paradis/blob/master/week4_problems.erl}
+
+It's {\sl approximately}:
+
+#+BEGIN_erlang
+-module(week4_problems).
+-compile(export_all).
+-export([test/0]).
+
+test() ->
+    120 = ex1:factorial(5),
+    L = [a,b,c,d,e,f],
+    [b,c,d,e,f,a] = ex1:rotate(1,L),
+    [f,a,b,c,d,e] = ex1:rotate(-1,L),
+    ... 
+    horray.
+#+END_erlang
+
+* Did I get the assignments right?
+
+** Check in the shell
+
+#+BEGIN_shell
+$ erl
+1> c(week4_problems).
+{ok,week4_problems}
+2> c(ex1).
+{ok,ex1}
+3> week4_problems:test().
+horray
+#+END_shell
+
+* case expression
+#+BEGIN_erlang
+area(A) ->
+    case A of
+       {square, X} ->
+           X*X;
+       {rectangle, X, Y} ->
+           X*Y
+       ...
+    end
+#+END_erlang   
+
+Or:
+
+#+BEGIN_erlang
+area({square,X}) -> X*X;
+area({rectangle,X,Y}) -> X*Y.
+#+END_erlang   
+
+* if expression
+#+BEGIN_erlang
+weekend(Day) ->
+    if
+       Day == saturday -> 
+          true;
+       Day == sunday -> 
+          true;
+       true ->
+          false
+    end.
+#+END_erlang   
+  
+** if is an \textcolor{red}{expression} and not an statement.
+* Funs
+** define own control abstractions:
+   
+#+BEGIN_erlang
+for(Max,Max,F) -> [F(Max)];
+for(I, Max, F) -> [F(I) | for(I+1,Max,F)].
+#+END_erlang   
+   
+#+BEGIN_shell
+1> D = fun(X) -> 2*X end.
+#Fun<erl_eval.6.17052888>
+2> hofs:for(1,10,D).
+[2,4,6,8,10,12,14,16,18,20]
+3> 
+#+END_shell
+
+* Simple list recursion
+#+BEGIN_erlang
+double([]) -> [];
+double([H|T]) -> [2*H|double(T)].
+#+END_erlang   
+
+#+BEGIN_shell
+3> c(math1).
+{ok,math1}
+4> math1:double([1,2,3,4,5]).
+[2,4,6,8,10]
+#+END_shell
+
+* Accumulators
+
+#+BEGIN_erlang
+sum(L) -> sum_helper(L, 0).
+
+sum_helper([], N) -> N;
+sum_helper([H|T], N) ->
+    N1 = N + H,
+    sum_helper(T, N1).
+#+END_erlang   
+   
+#+BEGIN_shell
+1> math1:sum([1,2,3,4,5]).
+15
+#+END_shell
+
+* sum\_and\_double
+
+** travserses the list twice
+
+#+BEGIN_erlang
+sum_and_double(L) ->
+    Sum = sum(L),
+    Double = double(L),
+    {Sum, Double}.
+
+double([]) -> [];
+double([H|T]) -> [2*H|double(T)].
+
+sum([]) -> 0;
+sum([H|T]) -> H + sum(T).
+#+END_erlang   
+   
+#+BEGIN_shell
+8> lists1:sum_and_double([1,2,3,4]). 
+{10,[2,4,6,8]}
+#+END_shell
+
+* sum\_and\_double1
+
+** traverses the list once -- \textcolor{Red}{gets the answer wrong} 
+
+#+BEGIN_erlang
+sum_and_double1(L) -> 
+    sum_and_double_helper1(L, [], 0).
+
+sum_and_double_helper1([H|T], L, N) ->
+    sum_and_double_helper1(T, [2*H|L], N + H);
+sum_and_double_helper1([], L, N) ->
+    {N, L}.
+#+END_erlang   
+   
+#+BEGIN_shell
+8> lists1:sum_and_double1([1,2,3,4]). 
+{10,[8,6,4,2]}
+#+END_shell
+
+* sum\_and\_double2
+
+** traverses the list once -- \textcolor{Red}{gets the answer right} 
+
+#+BEGIN_erlang
+sum_and_double2(L) -> 
+    sum_and_double_helper2(L, [], 0).
+
+sum_and_double_helper2([H|T], L, N) ->
+    sum_and_double_helper2(T, [2*H|L], N + H);
+sum_and_double_helper2([], L, N) ->
+    {N, lists:reverse(L)}.
+#+END_erlang   
+   
+#+BEGIN_shell
+8> lists1:sum_and_double2([1,2,3,4]). 
+{10,[2,4,6,8]}
+#+END_shell
+   
+* sum\_and\_double3
+
+** Renamed the helper function.
+   
+#+BEGIN_erlang
+sum_and_double3(L) -> 
+    sum_and_double3(L, [], 0).
+
+sum_and_double3([H|T], L, N) ->
+    sum_and_double3(T, [2*H|L], N + H);
+sum_and_double3([], L, N) ->
+    {N, lists:reverse(L)}.
+#+END_erlang   
+   
+#+BEGIN_shell
+1> lists1:sum_and_double2([1,2,3,4]). 
+{10,[2,4,6,8]}
+#+END_shell
+
+* Natural order in lists
+
+** Write the code using accumulators.
+** Don't bother if the lists come out in the wrong order.
+** Reverse the order at the end.
+** \verb+lists:reverse+ is a BIF not a function call \textcolor{red}{but it looks like a function call}.
+* Tail Recursion
+** The last thing you do is call another routine
+** really ``last call optimization''
+
+\begin{Verbatim}
+function a(){
+   call x
+   call y
+}
+
+call x is compiled as:
+  push address of y
+  call x
+
+the call to y (a lastcall) is compiled as
+  jmp y
+\end{Verbatim}
+
+* BIFS
+** Do things that are impossible in erlang ( \verb+atom_to_list(abc)+).
+** Do things that are slow in erlang ( \verb+lists:reverse/1+).
+** Look like erlang function calls
+
+* Apply
+  
+** \verb+apply(Mod, Func, [Arg1, Arg2, ..., ArgN])+ -- same as \verb+Mod:Func(Arg1, Arg2, ..., ArgN)+
+
+#+BEGIN_shell
+1> apply(lists, reverse, [[1,2,3,4]]).
+[4,3,2,1]
+#+END_shell
+
+* Guards
+#+BEGIN_erlang
+upcase(X) when $a =< X andalso X =< $z ->
+    X -$a + $A;
+upcase(X) ->
+    X.
+#+END_erlang   
+   
+#+BEGIN_shell
+1> c(lists1).
+{ok,lists1}
+2> lists1:upcase($a).
+65
+3> $a.
+97
+#+END_shell
+
+* List Comprehensions
+** \verb+[ Expression || Pattern <- List]+
+
+#+BEGIN_shell
+1> [lists1:upcase(I) || I <- "hello"].
+"HELLO"
+2> [{X,Y} || X <- [1,2,3], Y <- [a,b,c]]. 
+[{1,a},{1,b},{1,c},
+ {2,a},{2,b},{2,c},
+ {3,a},{3,b},{3,c}]
+#+END_shell
+
+* Tuple programs
+** Store tree like data structures in tuple
+** XML
+
+The XML \verb+<tag1 a1="abc" a2="def"> ... </tag1>+ can be represented
+as \verb+{tag1, [{a1,"abc"},{a2,"def"}], [ ...]}+
+
+#+BEGIN_erlang
+path_search([Tag|T],[{Tag,_,Children}|_]) ->
+    path_search(T, Children);
+...
+#+END_erlang
+
+* Records
+** What do the elements in a tuple mean?
+
+#+BEGIN_erlang
+X = {person,"zabdog","polgelzipper",42,22,....}
+#+END_erlang
+
+#+BEGIN_erlang
+-record(person,
+   {firstname, lastname, footsize, age,
+    ....}).
+
+X = #person{age=20, footsize=10}
+
+birthday(X) ->
+     Age = X#person.age,
+     X#person{age=Age+1}.
+#+END_erlang
+
+* Typed Records 1
+
+** We can add types to the fields.
+** Can be checked by the dialyzer.
+** Informative only:
+
+#+BEGIN_erlang
+-record(person,
+   {firstname :: string(),
+    lastname :: string(),
+    footsize :: integer(),
+    age :: integer(),
+    ....}).
+#+END_erlang
+
+** What's wrong with this?
+  
+* Typed Records 2
+
+#+BEGIN_erlang
+-type months() :: integer().
+
+-record(person,
+   {firstname :: string(),
+    lastname :: string(),
+    footsize :: integer(),
+    age :: months(),
+    ....}).
+#+END_erlang
+  
+* Catch
+#+BEGIN_shell
+1> X = atom_to_list(1).
+** exception error: bad argument
+     in function  atom_to_list/1
+        called as atom_to_list(1)
+2> X.
+ 1: variable 'X' is unbound
+3> X = (catch atom_to_list(1)).
+{'EXIT',{badarg,
+    [{erlang,atom_to_list,[1],[]},
+     {erl_eval,do_apply,6,
+       [{file,"erl_eval.erl"},{line,573}]},
+          ...
+#+END_shell
+
+* Try ... catch, catch .. throw
+#+BEGIN_erlang
+try F() 
+catch
+   exit:... ->
+   throw:... ->
+   error:... ->
+after
+   ...
+end
+#+END_erlang
+  
+* ++  and --\,--
+
+** X \verb|++| Y is an infix notation for \verb+lists:append(X,Y)+
+** Takes time \verb+O(length(X)).+
+
+#+BEGIN_shell
+> "abc" ++ "123".
+"abc123"
+> "abc123" -- "abc".
+"123"
+> "abc123" -- "123".
+"abc"
+> "abc123xyz" -- "123".
+"abcxyz"
+> "abc12xyz" -- "123". 
+"abcxyz"
+#+END_shell

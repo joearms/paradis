@@ -1,0 +1,82 @@
+#+STARTUP: overview, hideblocks
+#+BEGIN_kv
+title: Files - Sockets
+subtitle: Lecture E8 (Chapters 17..18)
+author: Joe Armstrong
+copyright: \copyright 2014 -- Joe Armstrong
+email: joe.armstrong@ericsson.com, joearms@gmail.com
+affiliation: Ericsson AB
+process: orgmode_plugin_slides
+#+END_kv
+
+* Frameworks2 - Websockets,  - Chapters 17,18, 
+
+** Streaming music.
+** Websockets.
+
+
+* Things to try at home
+** Shoutcast.
+** Streaming music.
+
+
+* Websockets
+** You can use sockets in the browser.
+** Low overheads.
+** Stream data in and out of the browser.
+** In the book and on my github account.
+
+* Philosophy
+
+** Let's be ``truly OO''.
+** To get a thing in the browser to do something you send it a message.
+** When somthing interesting happens in the browser you get sent a message.
+** This is NOT ajax, nor long-polling.
+
+* Sending messages to DIVS
+
+** Step 1) In HTML we can define a div:
+\begin{Verbatim}
+<div id="clock"></div>
+\end{Verbatim}
+** Step 2) In the browser we call a Javascript function to connect to Erlang:
+\begin{Verbatim}
+connect_to_erlang("localhost", 1456, "clock1");
+\end{Verbatim}
+** Step 3) in Erlang the function \verb+clock1:start+ is spawned:
+\begin{Verbatim}
+start(Browser) ->
+    Browser ! [{cmd,fill_div}, {id,clock}, 
+                {txt,current_time()}],
+    running(Browser).
+\end{Verbatim}
+
+* Extending the system:
+**In Erlang:
+\begin{Verbatim}
+Browser ! [{cmd,CName}, {tag1,va1},{tag2,val2,..}] 
+\end{Verbatim}
+** In Javascript we evaluate:
+\begin{Verbatim}
+Cname({cmd:CName, tag1:"va1", tag2:"val2", ..});
+\end{Verbatim}
+** So \verb+fill_div+ in JS is:
+\begin{Verbatim}
+function fill_div(o){
+    $('#'+o.id).html(o.txt);
+}
+\end{Verbatim}
+
+* Ezwebframe demos
+
+** Download from \verb+https://github.com/joearms/ezwebframe+.
+** Unpack.
+** Type \verb+make+.
+** Point Browser at \verb+http://localhost:1456+.
+
+
+
+
+
+
+
