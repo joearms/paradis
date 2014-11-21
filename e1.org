@@ -39,7 +39,6 @@ there are theorems about this} -  we won't solve these :-)
 ** This week cover chapters 1..6.
 ** There is one set of slides and one set of problems per week.
 ** The lectures have a lot of live coding (not in the slides).
-** The exercises must be done within a week.
 ** You get out of the course what you put into it. 
 ** Warn me if I drift off topic :-) {\sl we can always talk after the lectures}.
    
@@ -47,19 +46,6 @@ there are theorems about this} -  we won't solve these :-)
 ** Get a decent book.
 ** Type in all the examples (do not cut and paste examples).
 ** There is a slow method to learn languages {\sl Google for the answer to every problem...}
-
-* The course website
-** Assignments and other material are at \url{https://github.com/joearms/paradis/blob/master/week4_problems.erl}.
-** It's a GIT repository. Please push changes to me. {\sl help me improve the course better}.
-   
-* Help me improve the course
-** We start with a emacs org-mode, this file is \verb+f2-f3.org+.
-** An Erlang program \verb+orgmode_parse.erl+ transforms it into \verb+f2-f3.org.tex+. This adds color coding of code and a few other nice things.
-** Run \verb+pdflatex+ twice and get \verb+f2-f3.org.pdf+.
-** This system was written last week and is possibly buggy.
-** Please help me improve the material. Push all changes to github.
-** There are no course credits for helping.
-** \textcolor{Red}{tell me if the examples are too easy or difficult}. They should take N hours/week. What is N?
 
 * Let's get started
 	
@@ -74,7 +60,7 @@ title:Agner Krarup Erlang (1878 - 1929)
 ** Erlang was designed for building {\bf fault-tolerant}, {\bf concurrent}, {\bf scaleable} applications.
 ** The world {\sl is} concurrent.
 ** Erlang belongs to the {\bf actor} family of languages. There are two types of concurrency:
-** Shared-Memory Concurrency (Lectures F16..F18).
+** Shared-Memory Concurrency
 ** Message Passing Concurrency - Sending and receiving messages is the only way for processes to exchange data.
 ** We never know if a message is received (it might get lost on the way) - If you want to know if a message has been received then send a reply.
 ** Message passing is ``Location transparent'' (like sending letter in the mail).

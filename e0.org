@@ -12,15 +12,16 @@ process: orgmode_plugin_slides
 * About
 
 ** Assignments and other material are at \url{https://github.com/joearms/paradis}
+** PDF files and assignments are at the course site on ilearn2
 ** It's a GIT repository. Please push changes to me. {\sl help me improve the course better}.
    
 * Schedule
-** Week48 E1 - E2
-** Week49 E3 - E4
-** Week50 E5 - E6
-** Week51 E7 - E8
-** Week2 (1015) E9 - E10
-** Week3 (2015) E11
+** Week 48 E1 - E2
+** Week 49 E3 - E4
+** Week 50 E5 - E6
+** Week 51 E7 - E8
+** Week 2 (2015) E9 - E10
+** Week 3 (2015) E11
 
 * Week48 E1 - E2
 ** Sequential Erlang
@@ -51,7 +52,7 @@ process: orgmode_plugin_slides
 ** Websockets
 
 ** Problems \#4
-* Week2 (1015) E9 - E10
+* Week2 (2015) E9 - E10
 ** Databases
 ** ETS/Dets/Mnesia/3'rf party DBs
 ** The road to the gen server
@@ -66,8 +67,8 @@ process: orgmode_plugin_slides
 ** We start with a emacs org-mode, this file is \verb+e0.org+.
 ** An Erlang program \verb+orgmode_parse.erl+ transforms it into \verb+lecture_e0.tex+. This adds color coding of code and a few other nice things.
 ** Run \verb+pdflatex+ twice and get \verb+lecture_e0.pdf+.
-** This system was written last week and is possibly buggy.
+** This course is being continuously updated and is possibly buggy.
 ** Please help me improve the material. Push all changes to github.
 ** There are no course credits for helping.
-** \textcolor{Red}{tell me if the examples are too easy or difficult}. They should take N hours/week. What is N?
+** \textcolor{Red}{Tell me if the examples are too easy or difficult}. They should take N hours/week. What is N?
 

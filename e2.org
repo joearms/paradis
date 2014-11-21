@@ -16,7 +16,7 @@ process: orgmode_plugin_slides
 #+BEGIN_erlang
 area({square,X}) -> X*X;
 ...
-area({rectangle,X,Y}) -> X*X.
+area({rectangle,X,Y}) -> X*Y.
 #+END_erlang
   
 ** C/Javascript/... have single entry points so don't write:
@@ -104,7 +104,7 @@ func1(L) ->
 ** Cheat \verb+-compile(export_all).+
 * Assignments
 
-Fetch \url{https://github.com/joearms/paradis/blob/master/week4_problems.erl}
+Fetch \url{https://github.com/joearms/paradis/blob/master/problems1.erl}
 
 It's {\sl approximately}:
 

@@ -4,7 +4,8 @@ MODS := $(wildcard *.erl)
 LECTURES := $(wildcard *.org)
 PROBLEMS := $(wildcard problems_*.tex)
 
-ERLC     = @echo "  ERLC\t$<"; @ERLC@
+ERLC      = @echo "  ERLC\t$<"; @ERLC@
+PDFLATEX  = @echo "  PDFLATEX\t$<"; @PDFLATEX@
 
 %.beam: %.erl
 	$(ERLC) -W $<
