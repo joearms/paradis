@@ -71,4 +71,13 @@ process: orgmode_plugin_slides
 ** Please help me improve the material. Push all changes to github.
 ** There are no course credits for helping.
 ** \textcolor{Red}{Tell me if the examples are too easy or difficult}. They should take N hours/week. What is N?
+* Building the Course Material
+#+BEGIN_shell
+$ git clone https://github.com/joearms/paradis
+$ cd paradis/
+$ autoconf
+$ ./configure
+$ make
+#+END_shell
 
+Problem 1 - fix Makefile.in or configure.ac to reduce output from pdflatex.
