@@ -2,7 +2,7 @@
 -export([test_easy/0, test_hard/0, dump/2]).
 
 test_easy() ->
-    M = week4_solutions,
+    M = solutions1,
     120 = M:factorial(5),
     L = [a,b,c,d,e,f],
     [b,c,d,e,f,a] = M:rotate(1,L),
