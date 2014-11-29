@@ -17,6 +17,7 @@ autom4te.cache/*
 
 # Lecture .tex files are generated automatically
 lecture_*.tex
+*.org.tex
 
 # No need to include pdfs
 *.pdf

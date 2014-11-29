@@ -109,7 +109,7 @@ Fetch \url{https://github.com/joearms/paradis/blob/master/problems1.erl}
 It's {\sl approximately}:
 
 #+BEGIN_erlang
--module(week4_problems).
+-module(problems1).
 -compile(export_all).
 -export([test/0]).
 
@@ -128,11 +128,11 @@ test() ->
 
 #+BEGIN_shell
 $ erl
-1> c(week4_problems).
-{ok,week4_problems}
+1> c(problems1).
+{ok,problems1}
 2> c(ex1).
 {ok,ex1}
-3> week4_problems:test().
+3> problems1:test().
 horray
 #+END_shell
 
