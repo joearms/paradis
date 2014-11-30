@@ -1,0 +1,93 @@
+\documentclass[12pt]{hitec}
+
+\usepackage{fancyvrb}
+%%\usepackage{hyperref}
+
+\RecustomVerbatimEnvironment
+  {Verbatim}{Verbatim}
+  {frame=single}
+
+\title{Understanding GIT}
+
+\author{Joe Armstrong}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+
+\section{The GIT object store}
+
+Git objects are stored in files with names like
+\verb+.git\objects\CC\DDDDDDD+. The filename is built from the SHA1
+checksum of the contents of the file.  The first two characters in the
+SHA checkum is the directory name, the filename is the SHA1 checksum with
+the first two characters removed. So:
+
+\begin{verbatim}
+SHA(content(.git\objects\CC\DD..DD)) = CCDD..DD
+\end{verbatim}
+
+We can test this:
+
+\begin{Verbatim}[fontsize=\small,frame=single]
+$ ls .git/objects/02
+38cd38e15c788dc9be41edf63dda972f49f632
+$shasum .git/objects/02/38cd38e15c788dc9be41edf63dda972f49f632 
+465ae4af564adb1f2d1e714aa9a50f8ab1165f19 \ 
+    .git/objects/02/38cd38e15c788dc9be41edf63dda972f49f632
+\end{Verbatim}
+
+Git objects are compressed. When uncompressed they have the following format:
+
+\begin{Verbatim}
+Type<space>Length<0>
+Data
+\end{Verbatim}
+
+We can unpack them in Erlang like this:
+
+\begin{Verbatim}
+read_git_object(X) ->
+    io:format("Reading~p~n",[X]),
+    {ok, B} = file:read_file(X),
+    B1 = zlib:uncompress(B),
+    %% CC = hex:bin_to_hexstr(crypto:hash(sha,B1)),
+    TypeSizeData = unpack_object(B1),
+    {X, parse_git_object(TypeSizeData)}.
+
+unpack_object(B) ->
+    [Type,Rest] = binary:split(B, <<32>>),
+    [Len,Data] = binary:split(Rest,<<0>>),
+    {Type, Len, Data}.
+\end{Verbatim}
+
+There are four types of objects. Blobs, Trees, Commits and Tags.
+
+Blobs are just raw data. Trees are directory structures. {\sl more ...}
+
+\subsection{GIT trees}
+
+\begin{Verbatim}[frame=single]
+parse_git_tree(<<>>) ->
+    [];
+parse_git_tree(B) ->
+    [Mode,B1] = binary:split(B, <<32>>),
+    [FileName, <<Sha1:20/binary,Rest1/binary>>] = 
+        binary:split(B1, <<0>>),
+    Hex = hex:bin_to_hexstr(Sha1),
+    [{object_type(Mode),FileName,Hex}|parse_git_tree(Rest1)].
+    
+object_type(<<"100644">>) -> blob;
+object_type(<<"040000">>) -> tree;
+object_type(X)            -> X.
+\end{Verbatim}
+
+
+\section{The test program}
+
+\VerbatimInput[frame=single]{git_list.erl}
+
+
+\end{document}
