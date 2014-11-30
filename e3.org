@@ -9,9 +9,8 @@ affiliation: Ericsson AB
 process: orgmode_plugin_slides
 #+END_kv
 
-* F4 - Sequential Erlang 2(a) 
-** Chapters 7,8 
-
+* E3 - Sequential Erlang 2(a) 
+** Chapters 7,8.
 ** Binaries - storing blocks.
 ** Bit Syntax - manipulation bits.
 ** Bit Syntax examples.

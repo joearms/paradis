@@ -9,9 +9,9 @@ affiliation: Ericsson AB
 process: orgmode_plugin_slides
 #+END_kv
 
-* W5/F5 - Sequential Erlang 2(b) 
+* E4 - Sequential Erlang 2(b) 
 
-** Chapters 9,10
+** Chapters 9,10.
 ** Types - Informative not mandatory.
 ** Dynamic and static types - Pros and cons.
 ** Type Inference vs. Type checking.
