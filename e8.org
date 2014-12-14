@@ -30,7 +30,7 @@ process: orgmode_plugin_slides
 
 ** Let's be ``truly OO''.
 ** To get a thing in the browser to do something you send it a message.
-** When somthing interesting happens in the browser you get sent a message.
+** When something interesting happens in the browser you get sent a message.
 ** This is NOT ajax, nor long-polling.
 
 * Sending messages to DIVS
