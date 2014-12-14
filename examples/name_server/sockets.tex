@@ -1,0 +1,164 @@
+\documentclass[12pt]{article}
+
+\usepackage{fancyvrb}
+%%\usepackage{hyperref}
+
+\RecustomVerbatimEnvironment
+  {Verbatim}{Verbatim}
+  {frame=single}
+
+\title{Fun with sockets}
+
+\author{Joe Armstrong}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+
+\section{Introduction}
+
+In this note we make an extremely simple model of how name servers,
+resolvers, clients and servers interact. This is the primary model for
+interaction, used by billions of computers on the Internet.
+
+The goal is to make our programs as simple as possible so we can see
+how the bits fit together. 
+
+We need four programs:
+
+\begin{itemize}
+\item \verb+triv_tcp_name_server+ is a name server
+\item \verb+triv_tcp_resolver+ is a resolver
+\item \verb+triv_tcp_fac_server+ is a factorial server
+\item \verb+triv_tcp_fac_client+ is a factorial client
+\end{itemize}
+
+Before starting I'll just remind you of how to build a 
+parallel server in Erlang. This will be the model for the
+two servers in this note.
+
+\section{The simplest possible parallel server}
+
+The code for a parallel server  is from my Erlang book, page 271, but with a few
+modifications.  The code below is illustrative rather than runnable.
+\verb+options+ must be replaced by a list or options
+and \verb+do_something+ must be replaced by some code.
+
+\VerbatimInput[frame=single]{par_server.erl}
+
+\section{A Trivial TCP Name Server}
+
+A name server is a essentially a Key-Value database 
+that can be accessed through a message passing interface.
+
+We can add Key-Value pairs to the database, and we can look up the
+value of a Key and retrieve the associated value.
+
+Our server follows the pattern of a parallel server given in the previous section
+and is as follows:
+
+\VerbatimInput[frame=single]{triv_tcp_name_server.erl}
+
+The program has two processing loops. \verb+connection_loop+ handles
+the connection to a single client and lives for as long as a client is
+connected to the name server.  \verb+name_server_loop+ is a single
+process that lives forever.\footnote{well at least until the server is
+  stopped.}
+
+Accessing the server is done through a client program called a resolver.
+
+\section{A Trivial TCP Resolver}
+
+A resolver runs an a client machine and is used to access the services
+provided by a name server.
+
+Here's our trivially simple TCP resolver:
+
+
+\VerbatimInput[frame=single]{triv_tcp_resolver.erl}
+
+The resolver needs to know the hostname and port where the server is running.
+It can send two messages to the server. 
+The \verb+add+ message associates a key with a value. 
+\verb+lookup+ looks up the value of a key.
+
+\section{Trivial Factorial Server}
+
+The factorial server follows the same pattern as the original parallel server
+and in addition it registers its name with the name server.
+
+\VerbatimInput[frame=single]{triv_tcp_fac_server.erl}
+
+\section{Trivial TCP Factorial Client}
+
+The factorial client find the address of a factorial server by querying the 
+names server then directs a query to the factorial server.
+
+\VerbatimInput[frame=single]{triv_tcp_fac_client.erl}
+
+\section{A Trial Session}
+
+Compile everything then create three windows:
+
+\begin{Verbatim}
+In Window 1
+> triv_tcp_name_server:start()
+Starting name server on port 6000
+
+In Window 2
+> triv_tcp_fac_server:start().
+Starting factorial server on port 6010
+
+And in window 1 we see
+Adding:"fac" => {"localhost",6010}
+
+In window 3
+> triv_tcp_fac_client:fac(10).
+In window 1 we see
+Lookup:"fac"
+Reply:{value,{"fac",{"localhost",6010}}}
+
+And in window 3
+{ok,{faq_response,3628800}}
+\end{Verbatim}
+
+\section{Reality}
+
+The programs here are very much simplified compared the  versions found in
+a real system. Here are some of the features that are missing:
+
+\begin{itemize}
+\item A real name server needs a security mechanism. Our name server allows
+anybody to register a key-value pair on the server.
+
+\item A real name server has a time-to-live parameter for the data in the store.
+
+\item Real name servers recursively query other name servers if they do not know
+the value of key
+
+\item A real resolver maintains a local cache of previous key-value queries. The
+cached items have a time-to-live parameter obtained from the name servers.
+
+\item Real resolvers may query several different name servers either
+serially or in parallel.
+
+\item We use \verb+{packet,4}+ to frame the TCP packets and
+  \verb+term_to_binary+ and the inverse \verb+binary_to_term+ to
+  encode and decode packets. Real name servers use a binary packet
+  format.
+
+\item There is no mechanism to remove a name from the name server if the
+  server associated with the name dies.
+
+\item Consistency issues are not addressed. There are times when the 
+system is in an inconsistent state.
+
+\item There are no timeouts in the code.
+
+
+\end{itemize}
+
+
+\end{document}
