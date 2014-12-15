@@ -1,9 +1,12 @@
 -module(triv_tcp_resolver).
--export([store/4, lookup/3]).
+-export([store/2, lookup/1]).
 
-store(Key, Value,
-	 NameServerHost, NameServerPort) ->
-    case gen_tcp:connect(NameServerHost, NameServerPort,
+%% -define(HOST, "localhost").
+-define(HOST, "77.238.55.150").
+-define(PORT, 6000).
+
+store(Key, Value) ->
+    case gen_tcp:connect(?HOST, ?PORT,
 			 [binary,{packet,4},
 			  {active,true}]) of
 	{ok, Socket} ->
@@ -16,8 +19,8 @@ store(Key, Value,
 	    {error, connect}
     end.
 
-lookup(Key, NameServerHost, NameServerPort) ->     
-    case gen_tcp:connect(NameServerHost, NameServerPort,
+lookup(Key) ->
+    case gen_tcp:connect(?HOST, ?PORT,
 			 [binary,{packet,4},
 			  {active,true}]) of
 	{ok, Socket} ->

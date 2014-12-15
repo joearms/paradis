@@ -5,7 +5,8 @@
 start() -> start(6000).
 
 start(Port) ->
-    io:format("Starting name server on port ~p~n",[Port]),
+    IP = elib:my_ip(),
+    io:format("Starting name server ~p:~p~n",[IP, Port]),
     NameServerPid = spawn(fun() -> name_server_loop([]) end),
     {ok, Listen} = gen_tcp:listen(Port, 
 				  [binary,{packet,4},

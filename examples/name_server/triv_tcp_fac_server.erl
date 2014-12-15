@@ -6,14 +6,15 @@ start() ->
     start(6010).
 
 start(Port) ->
-    io:format("starting factorial server on port ~p~n",[Port]),
+    IP = elib:my_ip(),
+    io:format("starting factorial server ~p:~p~n",[IP, Port]),
     {ok, Listen} = gen_tcp:listen(Port,
 				  [binary,{packet,4},
                                    {reuseaddr,true},
                                    {active,true}]),
     %% Now register ourselves with the name server
-    triv_tcp_resolver:store("fac", {"localhost", Port},
-			    "localhost", 6000),
+
+    triv_tcp_resolver:store("fac", {IP, Port}),
     spawn(fun() -> connect(Listen) end).
 
 connect(Listen) ->
@@ -38,3 +39,8 @@ connection_loop(Socket) ->
 
 fac(0) -> 1;
 fac(N) -> N * fac(N-1).
+
+    
+
+
+    
