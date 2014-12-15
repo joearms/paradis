@@ -4,7 +4,7 @@
 
 fac(N) ->
     %% ask the name server where the fac server is
-    case triv_tcp_resolver:lookup("fac", "localhost", 6000) of
+    case triv_tcp_resolver:lookup("fac") of
 	{ok, {value, {"fac", {Host, Port}}}} ->
 	    %% connect to the fac server
 	    case gen_tcp:connect(Host, Port,
