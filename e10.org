@@ -1,6 +1,6 @@
 #+STARTUP: overview, hideblocks
 #+BEGIN_kv
-title: Databases + OTP
+title: The road to the gen\_server
 subtitle: Lecture E10 (Chapters 22)
 author: Joe Armstrong
 copyright: \copyright 2014 -- Joe Armstrong

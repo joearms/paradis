@@ -1,0 +1,283 @@
+\documentclass[12pt]{article}
+
+\usepackage{fancyvrb}
+%%\usepackage{hyperref}
+
+\RecustomVerbatimEnvironment
+  {Verbatim}{Verbatim}
+  {frame=single}
+
+\title{Simple Cryptography in Erlang}
+
+\author{Joe Armstrong}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+
+\section{Introduction}
+
+In this note we present a number of {\sl essential} cryptographic algorithms.
+Each of these algorithms solves a different cryptographic problem.
+They can be used individually or combined to solve different problems.
+
+We will give examples of the following:
+
+\begin{itemize}
+\item Computing a cryptographic hash of data.
+\item A Public/Private key asymmetric cryptographic system.
+\item A symmetric key system.
+\item A secret sharing algorithm.
+\end{itemize}
+
+All the code accompanying this article is in the directory\\
+\verb+https://github.com/joearms/paradis/tree/master/examples/crypto+
+
+\section{Cryptographic hashes}
+
+
+
+\begin{tabular}{|p{10cm}}
+A cryptographic hash function is a hash function which is considered
+practically impossible to invert, that is, to recreate the input data
+from its hash value alone. These one-way hash functions have been
+called "the workhorses of modern cryptography".[1] The input data is
+often called the message, and the hash value is often called the
+message digest or simply the digest.
+
+The ideal cryptographic hash function has four main properties:
+
+
+\begin{itemize}
+  \item it is easy to compute the hash value for any given message
+  \item it is infeasible to generate a message that has a given hash
+  \item it is infeasible to modify a message without changing the hash
+  \item it is infeasible to find two different messages with the same hash.
+\end{itemize}
+
+From: \verb+http://en.wikipedia.org/wiki/Cryptographic_hash_function+
+
+\end{tabular}
+
+SHA1 is one of the most commonly used cryptographic hash algorithms.
+It produces a 120 bit hash of a data set.
+SHA1 is part of the Erlang standard libraries.
+
+There are two ways of calling it:
+
+\begin{Verbatim}[frame=single]
+digest1() ->
+    crypto:hash(sha, "hello world").
+
+digest2() ->
+    S0 = crypto:hash_init(sha),
+    S1 = crypto:hash_update(S0, "hello "),
+    S2 = crypto:hash_update(S1, "world"),
+    crypto:hash_final(S2).
+\end{Verbatim}
+
+The first example can be used when the data whose hash value is needed
+is small.  The second where the data concerned is large. For example, if
+we wanted to compare digital images of a few MBytes we could use
+the first method, but to compute the SHA1 checksum of a GByte movie we
+would use the second method.
+
+\subsection{Applications of SHA1}
+
+The single most important application of cryptographic hashing is in {\sl
+  validation}. Two data sets can be considered identical if they have
+the same SHA1 checksum.
+
+{\sl Note: This is not a mathematical certainty. If we have more than $2^{120}$
+  different files then two will have the same SHA1 checksum}
+
+\section{Pubic Key Systems}
+
+In a public key system two different keys are used. One key is used to
+encrypt the data and a different key is used to decrypt the data.
+Use of different keys is called {\sl Asymmetric Encryption}.
+The RSA\footnote{Named after Don Rivest, Adi Shamir and Leonard Adleman.}  
+algorithm makes use of two keys \verb+{A,N}+ and
+\verb+{B,N}+.
+
+Here's a simple example, first we generate two primes \verb+P+ and \verb+Q+:
+
+\begin{verbatim}
+> P=demo:make_prime(10).
+214578232357
+> Q=demo:make_prime(10).
+10643821901
+\end{verbatim}
+
+Then we make the two keys:
+
+\begin{verbatim}
+> {A,B,N}=demo:make_key(P,Q).
+{65537,149155912722954489473,2283932489039303450657}
+\end{verbatim}
+
+The modulus \verb+N+ is just \verb+P*Q+:
+
+\begin{verbatim}
+> P*Q.
+2283932489039303450657
+\end{verbatim}
+
+To encode the integer \verb+1234+ (a secret), we compute:
+$1234^A mod N$:
+
+\begin{verbatim}
+> C = lin:pow(1234,A,N). 
+88048242822024428139
+\end{verbatim}
+
+To decrypt we use the other key:
+
+\begin{verbatim}
+> lin:pow(C,B,N). 
+1234
+\end{verbatim}
+
+We could, of course, use the keys in the opposite order:
+
+\begin{verbatim}
+> C1 = lin:pow(1234,B,N).
+96928412039852238659
+> lin:pow(C1,A,N).       
+1234
+\end{verbatim}
+
+\verb+make_key+ is like this:
+
+\begin{Verbatim}[frame=single]
+make_key(P, Q) ->
+    N = P * Q,
+    Phi = (P-1) * (Q-1),
+    E = 65537,
+    D = lin:inv(E, Phi),
+    {E,D,N}.
+\end{Verbatim}
+
+\verb+inv(A, B)+ computes \verb+C+ such that \verb+A*C mod B = 1+
+
+\subsection{Applications of RSA}
+
+RSA is {\sl slow} and {\sl can only encrypt a small amount of data}
+(ie some value less than \verb+N+). This is not a problem since we
+typically use it to encrypt an SHA1 checksum (120 bits) or a short password.
+
+The above algorithm is called ``text book RSA'' - in reality
+the key has to be padded\footnote{See OAEP - ``Optimal Asymmetric Encryption padding.''}
+to the N bits of the modulus.
+
+To speed up modulo arithmetic we might use ``Montgomery reduction''
+(ie computations module N are time consuming, so we do this modulo
+$2^K$ which is easier, then do some transformation to compute modulo
+$N$).
+
+2048 bit modulos are considered secure\footnote{The world record is
+  RSA-768 (2000 years on single code 2.2GHz AMD Opteron.}.
+
+
+\section{Symmetric Encryption}
+
+AES\footnote{The Advanced Encryption Standard.} is a set of encryption
+  methods which use a {\sl symmetric encryption algorithm}. This means
+  that the same key is used for encryption and decryption. Here's an
+  example, making use of the code in \verb+lib1_aes.erl+.
+
+\begin{Verbatim}[frame=single]
+test1() ->
+    Password = "hello",
+    Plain = <<"this is plain text">>,
+    Code = lib1_aes:encrypt(Password, Plain),
+    io:format("Code=~p ~p~n",[Code,size(Code)]),
+    Plain = lib1_aes:decrypt(Password, Code).
+\end{Verbatim}
+
+\subsection{Stream Encryption}
+
+To encrypt a stream of data we can use a stream encryption algorithm.
+Each iteration of the algorithm produces a new key to be used for the
+next iteration of the algorithm, for example, using RC4 we can write:
+
+\begin{Verbatim}[frame=single]
+test1() ->
+    K1 = crypto:stream_init(rc4, "secret password"),
+    {K2, C1} = crypto:stream_encrypt(K1, "hello "),
+    {K3, C2} = crypto:stream_encrypt(K2, "world"),
+    %% ...
+    {S1, M1} = crypto:stream_decrypt(K1, C1),
+    {S2, M2} = crypto:stream_decrypt(S1, C2),
+    {M1, M2}.
+\end{Verbatim}
+
+Running this:
+
+\begin{Verbatim}[frame=single]
+> crypto_examples:test1().
+{<<"hello ">>,<<"world">>}
+\end{Verbatim}
+
+\section{Secret Sharing}
+
+Shamir's Secret sharing algorithm provides a method of sharing a
+secret into $N$ parts such that any $K$ parts can recover the
+secret. Here $K <= N$ and $N > 0$.
+
+The implementation in this directory is due to Robert Newson and was
+published at \verb+https://github.com/rnewson/shamir/+
+
+As an example, suppose we want to share the secret \verb+hello+ using
+seven shares, so that any three shares unlock the secret. We can
+generate the shares like this:
+
+\begin{Verbatim}[frame=single]
+> L=shamir:share(<<"hello">>, 3,7).                                                
+[{share,3,1,<<206,145,84,97,217>>},
+ {share,3,2,<<229,208,230,155,102>>},
+ {share,3,3,<<67,36,222,150,208>>},
+ {share,3,4,<<56,15,170,12,128>>},
+ {share,3,5,<<158,251,146,1,54>>},
+ {share,3,6,<<181,186,32,251,137>>},
+ {share,3,7,<<19,78,24,246,63>>}]
+\end{Verbatim}
+
+Using shares 1 2 and 5 we can reconstruct the secret as follows:
+
+\begin{Verbatim}[frame=single]
+> shamir:recover([lists:nth(1,L),lists:nth(2,L),lists:nth(5,L)]).
+<<"hello">>
+\end{Verbatim}
+
+The algorithm fails if we don't give it three different shares:
+
+\begin{Verbatim}[frame=single]
+> shamir:recover([lists:nth(1,L),lists:nth(2,L),lists:nth(2,L)]).
+** exception error: no function clause matching
+   shamir:recover(3,[{1,10},{2,199}]) (shamir.erl, line 50)
+     in function  shamir:'-recover/1-lc$^2/1-1-'/2 (shamir.erl, line 48)
+     in call from shamir:recover/1 (shamir.erl, line 48)
+\end{Verbatim}
+
+Again the shared secret should be a password or digest that unlocks or
+validates the content of another file.
+
+\section{Putting it all together}
+
+This note has shown a number of different cryptographic algorithms.
+To make a secure system we combine these in various ways. In building a system
+we combine the cryptographic code with code to read and write files and sockets
+and to serialize and deserialize data.
+
+We can use the \verb+gen_tcp+ to read and write TCP sockets, and
+\verb+term_to_binary+ and \verb+binary_to_term+ to turn Erlang terms into
+data packets which can be stored in files or transmitted in data packets.
+
+
+
+
+\end{document}
+

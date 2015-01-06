@@ -1,6 +1,6 @@
 #+STARTUP: overview, hideblocks
 #+BEGIN_kv
-title: Databases + OTP
+title: Databases, Profiling, Coverage
 subtitle: Lecture E9 (Chapters 19..21)
 author: Joe Armstrong
 copyright: \copyright 2014 -- Joe Armstrong
@@ -8,7 +8,7 @@ email: joe.armstrong@ericsson.com, joearms@gmail.com
 affiliation: Ericsson AB
 process: orgmode_plugin_slides
 #+END_kv
-* W8/F10 - ETS, DETS Mnesia Database,Debugging etc. Chapters 19, 20,21
+* ETS, DETS Mnesia Database, Profiling etc. Chapters 19, 20,21
 
 Several databases have been implemented in Erlang:
 
