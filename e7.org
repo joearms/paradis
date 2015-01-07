@@ -323,7 +323,7 @@ start_seq_server() ->
     seq_loop(Listen).
 
 seq_loop(Listen) ->
-    {ok, Socket} = gen_tcp:listen(Listen),
+    {ok, Socket} = gen_tcp:accept(Listen),
     loop(Socket),
     seq_loop(Listen).
 #+END_erlang
@@ -334,15 +334,15 @@ start_par_server() ->
     spawn(fun() -> par_connect(Listen) end).
 
 par_connect(Listen) ->
-    {ok, Socket} = gen_tcp:listen(Listen),
-    spawn(fun() -> par_connect(Listen) end).
+    {ok, Socket} = gen_tcp:accept(Listen),
+    spawn(fun() -> par_connect(Listen) end),
     loop(Socket).
 #+END_erlang
 
 
 * TCP + UDP problems
 ** UDP - lost packets.
-** TCP - fragemented packages.
+** TCP - fragemented data.
 ** TCP - flow control.
 ** Both - DOS attacks.
 ** Both - Security.

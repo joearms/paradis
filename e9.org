@@ -177,7 +177,7 @@ $ ls
 #+BEGIN_erlang
 -record(shop,   {item, quantity, cost}).
 -record(design, {id, plan}).
--record{cost,   {name,price}.
+-record(cost,   {name,price}).
 
 do_this_once() ->
     mnesia:create_schema([node()]),
@@ -222,7 +222,7 @@ get_plan(PlanId) ->
 * Transactions
 
 ** Mnesia is interfaced through transactions.
-** Transactions either succeed or fail. If they fail the state of the database is unvhanged.
+** Transactions either succeed or fail. If they fail the state of the database is unchanged.
 
 #+BEGIN_erlang
 some_function() ->

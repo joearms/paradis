@@ -107,7 +107,7 @@ watch(Pid) ->
 * Monitors
 
 ** One directional links.
-** A monitor is like two links ``back to back''.
+** A link is like two monitors ``back to back''.
 
 * The Worker/Manager model
 ** Workers do work. They crash if they cannot do what they are supposed to do.
