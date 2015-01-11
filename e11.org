@@ -1,6 +1,6 @@
 #+STARTUP: overview, hideblocks
 #+BEGIN_kv
-title: Sequential Erlang 
+title: Some Distributed and Parallel Algorithms 
 subtitle: Lecture E11 (Chapters 23..24)
 author: Joe Armstrong
 copyright: \copyright 2014 -- Joe Armstrong
@@ -15,6 +15,7 @@ process: orgmode_plugin_slides
 ** Parallel Maps
 ** PUB SUB (Publish, Subscribe)
 
+
 * Patterns of concurrency
 ** No ``well accepted names''
 ** Client-Server
@@ -28,28 +29,114 @@ process: orgmode_plugin_slides
 ** PUB\_SUB (Channels and broadcast)
 ** Survey (every can vote)
 ** Bus (Routing)
-** Map-reduce one ventilator sending jobs to multiple idene
+** Map-reduce one ventilator sending jobs to multiple identical workers
+
+* RPC1
+** ``Vanilla RPC''
+
+#+BEGIN_erlang
+rpc(Pid, Q) ->
+   Tag = make_reference(),
+   Pid ! {self(), Tag, Q},
+   receive
+       {Pid, Reply} ->
+           Reply
+   end
+#+END_erlang
+
+
+* RPC2
+** Add a timeout
+#+BEGIN_erlang
+rpc(Pid, Q) ->
+   Tag = make_reference(),
+   Pid ! {self(), Tag, Q},
+   receive
+       {Pid, Reply} ->
+           {ok, Reply}
+       after 10000 ->
+           timeout;
+   end
+#+END_erlang
+** Difficult to decide how long to wait
+
+* RPC3
+** ``Vanilla RPC''
+
+#+BEGIN_erlang
+rpc(Pid, Q) ->
+   Tag = make_reference(),
+   Pid ! {self(), Tag, Q},
+   receive
+       {Pid, Reply} ->
+           Reply
+   end
+#+END_erlang
+
+** Split this into two
+#+BEGIN_erlang
+promise(Pid, Q) ->
+   Tag = make_reference(),
+   Pid ! {self(), Tag, Q},
+   {Pid, Tag}.
+
+yield({Pid,Tag}) ->
+   receive
+       {Pid, Reply} ->
+           Reply
+   end
+#+END_erlang
+
+* Promises
+#+BEGIN_erlang
+ComputeSomething = promise(Pid, Q),
+... do some computation ...
+Something = yield(ComputeSomething)
+#+END_erlang
+
+** Must take care of ``broken promises''
+** Is this really:
+
+#+BEGIN_erlang
+[Something, Rest] = pardo([fun() -> ... end,
+                           fun() -> ... end])
+#+END_erlang
+
+* Pardo
+#+BEGIN_erlang
+function pardo(L) ->
+    S = self(),
+    Pids = [do(S,F) || F <- L],
+    [receive {Pid,Val} -> Val end || Pid <- Pids].
+
+do(Parent, F) ->
+    spawn(fun() ->
+            Parent ! {self(), F()}
+          end).
+#+END_erlang
+
 
 * ZeroMQ
 
 ** REQ - sends request waits for response lock step send-receive
 
-** REP - accecpts requests sends seplies - lock step receive-send
+** REP - accepts requests sends seplies - lock step receive-send
 
-** ROUTER - the is some routine table {Id,Out} a messag on IN contains a tag (Id) and is sent to Out
+** ROUTER - there is some router table {Id,Out} a message on IN which contains a tag (Id) is sent to Out
 
 
-** DEALER - imagine cards being delt. Has a high water mark. Suspends if at hight water mark.
+** DEALER - imagine cards being dealt. Has a high water mark. Suspends if high water mark reached.
 sends to outputs in round-robin fashion
 
 ** PUB
 ** SUB
-** PIPELINE - two ports what receoved on In is sent to Out* There can be several Outs
+** PIPELINE - two ports what received on In is sent to Out*. There can be several Outs
 
-** PUSH -- like send but can retry is the send fails
+** PUSH -- like send but can retry if the send fails
 ** PULL -- pulls data from an endpoint
-** PAIR -- exclisive pair of processes like two pipleines back to back
+** PAIR -- exclusive pair of processes like two pipleines back to back
 ** STREAM (should be stream send, stream receive)
+
 
 * BROKER (From ZMQ)
 
@@ -113,11 +200,21 @@ this:q
 
 
 * PUB-SUB
-** Twiter
+** Twitter
 ** Facebook
 ** Mailing Lists
 ** IRC
 ** Newsletters
+
+* PUB-SUB
+** There are number of CHANNELS
+** You can send messages to a channel
+** You can subscribe to a channel
+** All messages sent to a channel are sent to the people who have currently connected to the channel
+
+Take a look at pubsub0.erl pubsub1.erl
+
+
 
 
 
