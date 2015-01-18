@@ -25,5 +25,4 @@ lecture_*.tex
 # Emacs and vim files
 *~
 \#*\#
-*.swp
-*.swo
+.*.s??
